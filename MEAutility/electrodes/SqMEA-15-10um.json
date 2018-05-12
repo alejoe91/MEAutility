@@ -1,0 +1,7 @@
+{   "electrode_name": "SqMEA-15-10um",
+    "sortlist": null,
+    "pitch": [10.0,10.0],
+    "dim": [15,15],
+    "radius": 10.0,
+    "shape": "square"
+}

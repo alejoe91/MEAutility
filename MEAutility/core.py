@@ -16,9 +16,19 @@ import os.path
 import copy
 
 class Electrode:
-    """Electrode: position and current (uses semi-infinite plane to compute field)"""
     #TODO: make grid contribution for squared electrodes
     def __init__(self, position=None, current=False, sigma=None, points_per_edge=None, shape='square', side_length=None):
+        '''
+
+        Parameters
+        ----------
+        position
+        current
+        sigma
+        points_per_edge
+        shape
+        side_length
+        '''
         # convert to numpy array
         if type(position) == list:
             position = np.array(position)
@@ -61,9 +71,17 @@ class Electrode:
 
 
 class MEA(object):
-    """MEA: collection of electrodes"""
-    def __init__(self, electrodes=None):
-        if electrodes:
+    '''
+
+    '''
+    def __init__(self, electrodes=None, dim=None, pitch=None):
+        '''
+
+        Parameters
+        ----------
+        electrodes
+        '''
+        if electrodes is not None:
             self.electrodes = electrodes
             if type(electrodes) in (np.ndarray, list):
                 self.number_electrode = len(electrodes)
@@ -77,6 +95,9 @@ class MEA(object):
         else:
             self.number_electrode = 0
             # print "Created empty MEA: add electrodes!"
+
+        self.dim = dim
+        self.pitch = pitch
 
     def set_electrodes(self, electrodes):
         self.electrodes = electrodes
@@ -170,8 +191,19 @@ class MEA(object):
 
 
 class SquareMEA(MEA):
-    """Square MEA with N electrodes per side and a certain pitch"""
+    '''
+
+    '''
     def __init__(self, dim=None, pitch=None, width=None, x_plane=None):
+        '''
+
+        Parameters
+        ----------
+        dim
+        pitch
+        width
+        x_plane
+        '''
         MEA.__init__(self)
 
         if width:
@@ -249,8 +281,9 @@ class SquareMEA(MEA):
 
 
 class GeometricNeuron:
-    """GeometricNeuron is described with 3 parameters: soma_pos, dir_align, axon_length"""
+    '''
 
+    '''
     def __init__(self, soma_pos, align_dir, length = False, discrete_points = False):
         # Initialize neuron with 3d position and direction
         self.soma_pos = soma_pos
@@ -280,8 +313,21 @@ class GeometricNeuron:
         return axon_end
 
 
-def get_elcoords(xoffset,dim,pitch,electrode_name,sortlist,**kwargs):
-    ''' Calculate electrode positions according to kwargs
+def get_elcoords(xoffset, dim, pitch, electrode_name, sortlist, radius, plane=None, **kwargs):
+    '''
+
+    Parameters
+    ----------
+    xoffset
+    dim
+    pitch
+    electrode_name
+    sortlist
+    kwargs
+
+    Returns
+    -------
+
     '''
     if 'neuronexus-32' in electrode_name.lower():
         # calculate hexagonal order
@@ -291,9 +337,29 @@ def get_elcoords(xoffset,dim,pitch,electrode_name,sortlist,**kwargs):
         if sum(coldims)!=np.prod(dim):
             raise ValueError('Dimensions in Neuronexus-32-channel probe do not match.')
         zshift = -pitch[1]*(coldims[1]-1)/2.
-        x = np.array([0.]*sum(coldims))
+        x = np.array([0.]*sum(coldims))+xoffset
         y = np.concatenate([[-pitch[0]]*coldims[0],[0.]*coldims[1],[pitch[0]]*coldims[2]])
-        z = np.concatenate((np.arange(pitch[1]/2.,coldims[0]*pitch[1],pitch[1]),np.arange(0.,coldims[1]*pitch[1],pitch[1]),np.arange(pitch[1]/2.,coldims[2]*pitch[1],pitch[1])))+zshift
+        z = np.concatenate((np.arange(pitch[1]/2., coldims[0]*pitch[1],pitch[1]),
+                            np.arange(0.,coldims[1]*pitch[1],pitch[1]),
+                            np.arange(pitch[1]/2.,coldims[2]*pitch[1],pitch[1])))+zshift
+    elif 'tetrode' in electrode_name.lower():
+        if plane is not None:
+            if plane == 'xy':
+                x = np.array([-np.sqrt(2.)*radius, 0, np.sqrt(2.)*radius, 0])
+                y = np.array([0, -np.sqrt(2.)*radius, 0, np.sqrt(2.)*radius])
+                z = np.array([0, 0, 0, 0])
+            elif plane == 'yz':
+                y = np.array([-np.sqrt(2.)*radius, 0, np.sqrt(2.)*radius, 0])
+                z = np.array([0, -np.sqrt(2.)*radius, 0, np.sqrt(2.)*radius])
+                x = np.array([0, 0, 0, 0])
+            elif plane == 'xz':
+                x = np.array([-np.sqrt(2.)*radius, 0, np.sqrt(2.)*radius, 0])
+                z = np.array([0, -np.sqrt(2.)*radius, 0, np.sqrt(2.)*radius])
+                y = np.array([0, 0, 0, 0])
+        else:
+            x = np.array([-np.sqrt(2.)*radius, 0, np.sqrt(2.)*radius, 0])
+            y = np.array([0, -np.sqrt(2.)*radius, 0, np.sqrt(2.)*radius])
+            z = np.array([0, 0, 0, 0])
     else:
         x, y, z = np.mgrid[0:1,-(dim[0]-1)/2.:dim[0]/2.:1, -(dim[1]-1)/2.:dim[1]/2.:1]
         x=x+xoffset
@@ -309,6 +375,63 @@ def get_elcoords(xoffset,dim,pitch,electrode_name,sortlist,**kwargs):
         for i,si in enumerate(sortlist):
             el_pos_sorted[si] = el_pos[i]
             
-    return el_pos_sorted    
+    return el_pos_sorted
+
+
+def return_mea(electrode_name=None, x_plane=None):
+    '''
+
+    Parameters
+    ----------
+    electrode_name
+
+    Returns
+    -------
+
+    '''
+    import json
+
+    if electrode_name is None:
+        print 'Available MEA: \nSqMEA-15-10um - SqMEA-10-15um - SqMEA-7-20um - SqMEA-6-25um -SqMEA-5-30um\n' \
+              'Neuronexus-32 - Neuronexus-32-cut-30 - Neuroseeker-128 - Neuropixel-384 - Neuropixel-128'
+        return
+    else:
+        # load MEA info
+        this_dir, this_filename = os.path.split(__file__)
+        electrode_path = os.path.join(this_dir, "electrodes")
+        with open(os.path.join(electrode_path, electrode_name + '.json')) as meafile:
+            elinfo = json.load(meafile)
+
+        if x_plane is None:
+            x_plane = 0.
+        pos = get_elcoords(x_plane, **elinfo)
+
+        return pos, elinfo['dim'], elinfo['pitch']
+
+def return_mea_info(electrode_name=None):
+    '''
+
+    Parameters
+    ----------
+    electrode_name
+
+    Returns
+    -------
+
+    '''
+    import json
+
+    if electrode_name is None:
+        print 'Available MEA: \nSqMEA-15-10um - SqMEA-10-15um - SqMEA-7-20um - SqMEA-6-25um -SqMEA-5-30um\n' \
+              'Neuronexus-32 - Neuronexus-32-cut-30 - Neuroseeker-128 - Neuropixel-384 - Neuropixel-128'
+        return
+    else:
+        # load MEA info
+        this_dir, this_filename = os.path.split(__file__)
+        electrode_path = os.path.join(this_dir, "electrodes")
+        with open(os.path.join(electrode_path, electrode_name + '.json')) as meafile:
+            elinfo = json.load(meafile)
+
+        return elinfo
             
     
