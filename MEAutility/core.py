@@ -337,11 +337,11 @@ def get_elcoords(xoffset, dim, pitch, electrode_name, sortlist, radius, plane=No
         if sum(coldims)!=np.prod(dim):
             raise ValueError('Dimensions in Neuronexus-32-channel probe do not match.')
         zshift = -pitch[1]*(coldims[1]-1)/2.
-        x = np.array([0.]*sum(coldims))+xoffset
+        x = np.array([0.]*sum(coldims))
         y = np.concatenate([[-pitch[0]]*coldims[0],[0.]*coldims[1],[pitch[0]]*coldims[2]])
         z = np.concatenate((np.arange(pitch[1]/2., coldims[0]*pitch[1],pitch[1]),
-                            np.arange(0.,coldims[1]*pitch[1],pitch[1]),
-                            np.arange(pitch[1]/2.,coldims[2]*pitch[1],pitch[1])))+zshift
+                            np.arange(0.,coldims[1]*pitch[1], pitch[1]),
+                            np.arange(pitch[1]/2.,coldims[2]*pitch[1], pitch[1])))+zshift
     elif 'tetrode' in electrode_name.lower():
         if plane is not None:
             if plane == 'xy':
@@ -360,6 +360,22 @@ def get_elcoords(xoffset, dim, pitch, electrode_name, sortlist, radius, plane=No
             x = np.array([-np.sqrt(2.)*radius, 0, np.sqrt(2.)*radius, 0])
             y = np.array([0, -np.sqrt(2.)*radius, 0, np.sqrt(2.)*radius])
             z = np.array([0, 0, 0, 0])
+    elif 'neuropixels' in electrode_name.lower():
+        if 'v1' in electrode_name.lower():
+            # checkerboard structure
+            x, y, z = np.mgrid[0:1,-(dim[0]-1)/2.:dim[0]/2.:1, -(dim[1]-1)/2.:dim[1]/2.:1]
+            x=x+xoffset
+            yoffset = np.array([pitch[0]/4.,-pitch[0]/4.]*(dim[1]/2))
+            y=np.add(y*pitch[0],yoffset) #y*pitch[0]
+            z=z*pitch[1]
+        elif 'v2' in electrode_name.lower():
+            # no checkerboard structure
+            x, y, z = np.mgrid[0:1,-(dim[0]-1)/2.:dim[0]/2.:1, -(dim[1]-1)/2.:dim[1]/2.:1]
+            x=x+xoffset
+            y=y*pitch[0]
+            z=z*pitch[1]
+        else:
+            raise NotImplementedError('This version of the NeuroPixels Probe is not implemented')
     else:
         x, y, z = np.mgrid[0:1,-(dim[0]-1)/2.:dim[0]/2.:1, -(dim[1]-1)/2.:dim[1]/2.:1]
         x=x+xoffset
@@ -374,11 +390,11 @@ def get_elcoords(xoffset, dim, pitch, electrode_name, sortlist, radius, plane=No
     if sortlist is not None:
         for i,si in enumerate(sortlist):
             el_pos_sorted[si] = el_pos[i]
-            
+
     return el_pos_sorted
 
 
-def return_mea(electrode_name=None, x_plane=None):
+def return_mea(electrode_name=None, x_plane=None, **kwargs):
     '''
 
     Parameters
@@ -393,7 +409,8 @@ def return_mea(electrode_name=None, x_plane=None):
 
     if electrode_name is None:
         print 'Available MEA: \nSqMEA-15-10um - SqMEA-10-15um - SqMEA-7-20um - SqMEA-6-25um -SqMEA-5-30um\n' \
-              'Neuronexus-32 - Neuronexus-32-cut-30 - Neuroseeker-128 - Neuropixel-384 - Neuropixel-128'
+              'Neuronexus-32 - Neuronexus-32-Kampff - Neuronexus-32-cut-30 - Neuroseeker-128 - NeuroSeeker128-Kampff - ' \
+              'Neuropixel-384 - Neuropixel-128'
         return
     else:
         # load MEA info
@@ -404,7 +421,13 @@ def return_mea(electrode_name=None, x_plane=None):
 
         if x_plane is None:
             x_plane = 0.
-        pos = get_elcoords(x_plane, **elinfo)
+        if 'sortlist' in kwargs.keys():
+            sortlist = kwargs['sortlist']
+            if sortlist == None:
+                elinfo['sortlist'] = None
+            pos = get_elcoords(x_plane,**elinfo)
+        else:
+            pos = get_elcoords(x_plane, **elinfo)
 
         return pos, elinfo['dim'], elinfo['pitch']
 
@@ -423,7 +446,7 @@ def return_mea_info(electrode_name=None):
 
     if electrode_name is None:
         print 'Available MEA: \nSqMEA-15-10um - SqMEA-10-15um - SqMEA-7-20um - SqMEA-6-25um -SqMEA-5-30um\n' \
-              'Neuronexus-32 - Neuronexus-32-cut-30 - Neuroseeker-128 - Neuropixel-384 - Neuropixel-128'
+              'Neuronexus-32 - Neuronexus-32-cut-30 - Neuroseeker-128 - Neuropixel-384 - Neuropixel-128 - tetrode'
         return
     else:
         # load MEA info
@@ -433,5 +456,3 @@ def return_mea_info(electrode_name=None):
             elinfo = json.load(meafile)
 
         return elinfo
-            
-    
