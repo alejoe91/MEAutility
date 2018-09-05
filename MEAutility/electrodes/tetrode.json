@@ -1,9 +1,0 @@
-{   "electrode_name": "tetrode",
-    "sortlist": null,
-    "pitch": [15, 15],
-    "dim": [1, 4],
-    "radius": 8.0,
-    "shape": "circle",
-    "reach": 80.0,
-    "plane": "xy"
-}

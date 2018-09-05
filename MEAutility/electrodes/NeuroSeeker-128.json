@@ -1,8 +1,0 @@
-{
-    "electrode_name": "NeuroSeeker-128",
-    "sortlist": null,
-    "pitch": [22.5,22.5],
-    "dim": [4,32],
-    "radius": 10.0,
-    "shape": "square"
-}

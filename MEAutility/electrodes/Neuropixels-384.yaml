@@ -1,0 +1,6 @@
+electrode_name: Neuropixels-384
+sortlist: null
+pitch: [25.0,25.0]
+dim: [2, 197]
+radius: 12.0
+shape: square

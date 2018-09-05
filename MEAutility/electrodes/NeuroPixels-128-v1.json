@@ -1,8 +1,0 @@
-{
-    "electrode_name": "NeuroPixels-128-v1",
-    "sortlist": null,
-    "pitch": [32.0,20.0],
-    "dim": [2,64],
-    "radius": 6.0,
-    "shape": "square"
-}
