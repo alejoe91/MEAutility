@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+from __future__ import print_function
 """
 
 Collection of classes and functions for MEA stimulation
@@ -65,7 +65,7 @@ class Electrode:
             if any(point != self.position):
                 return self.current / (2*np.pi*self.sigma*la.norm(point-self.position))
             else:
-                print "WARNING: point and electrode location are coincident! Field set to MAX_FIELD: ", self.max_field
+                print("WARNING: point and electrode location are coincident! Field set to MAX_FIELD: ", self.max_field)
                 return self.max_field
         # add return of x-y-z components of the field
 
@@ -85,16 +85,16 @@ class MEA(object):
             self.electrodes = electrodes
             if type(electrodes) in (np.ndarray, list):
                 self.number_electrode = len(electrodes)
-                # print "Create MEA with ", len(self.electrodes), " electrodes"
+                # print("Create MEA with ", len(self.electrodes), " electrodes")
             elif isinstance(electrodes, Electrode):
                 self.number_electrode = 1
-                # print "Create MEA with 1 electrode"
+                # print("Create MEA with 1 electrode")
             else:
                 self.number_electrode = 0
-                print "Wrong arguments"
+                print("Wrong arguments")
         else:
             self.number_electrode = 0
-            # print "Created empty MEA: add electrodes!"
+            # print("Created empty MEA: add electrodes!")
 
         self.dim = dim
         self.pitch = pitch
@@ -144,7 +144,7 @@ class MEA(object):
         if points.ndim == 1:
             vp = 0
             if len(points) != 3:
-                print "Error: expected 3d point"
+                print("Error: expected 3d point")
                 return
             else:
                 for ii in range(self.number_electrode):
@@ -152,7 +152,7 @@ class MEA(object):
 
         elif points.ndim == 2:
             if points.shape[1] != 3:
-                print "Error: expected 3d points"
+                print("Error: expected 3d points")
                 return
             else:
 
@@ -168,11 +168,12 @@ class MEA(object):
         return vp
 
     def save_currents(self, filename):
-        with open(filename, 'w') as f:
-            for a in range(self.number_electrode):
-                print >> f, "%g" % (self.get_currents()[a])
+        #todo save numpy
+        # with open(filename, 'w') as f:
+        #     for a in range(self.number_electrode):
+        #         print >> f, "%g" % (self.get_currents()[a])
 
-        print 'Currents saved successfully to file ', f.name
+        print('Currents saved successfully to file ', filename)
 
     def load_currents(self, filename):
         if os.path.isfile(filename):
@@ -182,12 +183,12 @@ class MEA(object):
                     currents.append(int(line))
 
                 if len(currents) != self.number_electrode:
-                    print 'Error: number of currents in file different than number of electrodes'
+                    print('Error: number of currents in file different than number of electrodes')
                 else:
-                    print 'Currents loaded successfully from file ', f.name
+                    print('Currents loaded successfully from file ', f.name)
                     self.set_currents(currents)
         else:
-            print 'File does not exist'
+            print('File does not exist')
 
 
 class SquareMEA(MEA):
@@ -232,7 +233,7 @@ class SquareMEA(MEA):
 
         # Create matrix of electrodes
         if (self.dim % 2 is 0):
-            # print self.dim, 'even self.dim'
+            # print(self.dim, 'even self.dim')
             sources_pos_y = range(-self.dim / 2 * self.pitch + self.pitch / 2, self.dim / 2 * self.pitch, self.pitch)
         else:
             sources_pos_y = range(-(self.dim / 2) * self.pitch, (self.dim / 2) * self.pitch + self.pitch, self.pitch)
@@ -252,7 +253,7 @@ class SquareMEA(MEA):
             electrode_matrix = self.get_electrode_matrix()
             return electrode_matrix[index]
         else:
-            print "Index out of bound"
+            print("Index out of bound")
             return None
 
     def get_electrodes_number(self):
@@ -279,38 +280,6 @@ class SquareMEA(MEA):
                 current_array[self.dim * yy + zz] = currents[zz, yy]
         MEA.set_currents(self, currents_array=current_array)
 
-
-class GeometricNeuron:
-    '''
-
-    '''
-    def __init__(self, soma_pos, align_dir, length = False, discrete_points = False):
-        # Initialize neuron with 3d position and direction
-        self.soma_pos = soma_pos
-        if any(align_dir != np.array([0, 0, 0])):
-            self.align_dir = align_dir/la.norm(align_dir)
-        else:
-            print "Error: axon must have a direction different than [0, 0, 0]"
-            return
-        if length:
-            self.length = length
-        else:
-            self.length = 10
-        if discrete_points:
-            self.points = discrete_points
-        else:
-            self.points = 100
-
-        # print "Created Geometric Neuron with soma at: ", self.soma_pos, " and direction ", self.align_dir
-
-    def get_axon_points(self):
-        steps = np.linspace(0, self.length, num=self.points)
-        axon_points = np.array([self.soma_pos + st*self.align_dir for st in steps])
-        return axon_points
-
-    def get_axon_end(self):
-        axon_end = self.soma_pos + self.length*self.align_dir
-        return axon_end
 
 
 def get_elcoords(xoffset, dim, pitch, electrode_name, sortlist, radius, plane=None, **kwargs):
@@ -405,19 +374,19 @@ def return_mea(electrode_name=None, x_plane=None, **kwargs):
     -------
 
     '''
-    import json
+    import yaml
 
     if electrode_name is None:
-        print 'Available MEA: \nSqMEA-15-10um - SqMEA-10-15um - SqMEA-7-20um - SqMEA-6-25um -SqMEA-5-30um\n' \
-              'Neuronexus-32 - Neuronexus-32-Kampff - Neuronexus-32-cut-30 - Neuroseeker-128 - NeuroSeeker128-Kampff - ' \
-              'Neuropixel-384 - Neuropixel-128'
+        this_dir, this_filename = os.path.split(__file__)
+        electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
+        print('Available MEA: \n', electrodes)
         return
     else:
         # load MEA info
         this_dir, this_filename = os.path.split(__file__)
         electrode_path = os.path.join(this_dir, "electrodes")
-        with open(os.path.join(electrode_path, electrode_name + '.json')) as meafile:
-            elinfo = json.load(meafile)
+        with open(os.path.join(electrode_path, electrode_name + '.yaml')) as meafile:
+            elinfo = yaml.load(meafile)
 
         if x_plane is None:
             x_plane = 0.
@@ -442,17 +411,18 @@ def return_mea_info(electrode_name=None):
     -------
 
     '''
-    import json
+    import yaml
 
     if electrode_name is None:
-        print 'Available MEA: \nSqMEA-15-10um - SqMEA-10-15um - SqMEA-7-20um - SqMEA-6-25um -SqMEA-5-30um\n' \
-              'Neuronexus-32 - Neuronexus-32-cut-30 - Neuroseeker-128 - Neuropixel-384 - Neuropixel-128 - tetrode'
+        this_dir, this_filename = os.path.split(__file__)
+        electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
+        print('Available MEA: \n', electrodes)
         return
     else:
         # load MEA info
         this_dir, this_filename = os.path.split(__file__)
         electrode_path = os.path.join(this_dir, "electrodes")
-        with open(os.path.join(electrode_path, electrode_name + '.json')) as meafile:
-            elinfo = json.load(meafile)
+        with open(os.path.join(electrode_path, electrode_name + '.yaml')) as meafile:
+            elinfo = yaml.load(meafile)
 
         return elinfo
