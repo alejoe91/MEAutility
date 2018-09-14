@@ -17,7 +17,7 @@ import copy
 
 class Electrode:
     #TODO: make grid contribution for squared electrodes
-    def __init__(self, position=None, current=False, sigma=None, points_per_edge=None, shape='square', side_length=None):
+    def __init__(self, position=None, normal=None, current=None, sigma=None, max_field=None, points=None, shape=None, size=None):
         '''
 
         Parameters
@@ -25,31 +25,46 @@ class Electrode:
         position
         current
         sigma
-        points_per_edge
+        max_field
+        points
         shape
-        side_length
+        size
         '''
         # convert to numpy array
         if type(position) == list:
             position = np.array(position)
-
         self.position = position
-        if sigma:
+        if sigma is not None:
             self.sigma = sigma
         else:
             self.sigma = 0.3
-
-        self.max_field = 1000
-
-        if current:
+        if max_field is not None:
+            self.max_field = max_field
+        else:
+            self.max_field = 1000
+        if current is not None:
             self.current = current
         else:
             self.current = 0
-
-        if points_per_edge:
-            self.points_per_edge = points_per_edge
+        if points is not None:
+            self.points = points
         else:
-            self.points_per_edge = 1
+            self.points = 1
+        if normal is None and self.points > 1:
+            raise Exception('Provide normal direction to electrode')
+        elif normal is not None:
+            self.normal = normal
+        else:
+            self.normal = None
+        if shape is not None:
+            self.shape = shape
+        else:
+            self.shape = 'square'
+        if size is not None:
+            self.size = size
+        else:
+            self.size = 5
+
 
     def set_current(self, current):
         self.current = current
@@ -60,13 +75,27 @@ class Electrode:
     def set_max_field(self, max_field):
         self.max_field = max_field
 
-    def field_contribution(self, point):
-        if self.points_per_edge == 1:
-            if any(point != self.position):
-                return self.current / (2*np.pi*self.sigma*la.norm(point-self.position))
+    def field_contribution(self, pos, model='inf'):
+        if self.points == 1:
+            if any(pos != self.position):
+                if model == 'inf':
+                    return self.current / (4*np.pi*self.sigma*la.norm(pos-self.position))
+                elif model == 'semi':
+                    return self.current / (2*np.pi*self.sigma*la.norm(pos-self.position))
             else:
                 print("WARNING: point and electrode location are coincident! Field set to MAX_FIELD: ", self.max_field)
                 return self.max_field
+        else:
+            split_current = self.current / self.points
+            potential = 0
+            for p in range(self.points):
+                if self.shape == 'square':
+                    # draw random sample in 3D
+                    arr = (2*self.size)*np.random.rand(3) - self.size
+                    point = np.cross(arr, self.normal)
+                    pass
+                else:
+                    pass
         # add return of x-y-z components of the field
 
 
@@ -74,7 +103,7 @@ class MEA(object):
     '''
 
     '''
-    def __init__(self, electrodes=None, dim=None, pitch=None):
+    def __init__(self, electrodes=None, dim=None, pitch=None, model=None):
         '''
 
         Parameters
@@ -94,50 +123,112 @@ class MEA(object):
                 print("Wrong arguments")
         else:
             self.number_electrode = 0
-            # print("Created empty MEA: add electrodes!")
+            print("Created empty MEA: add electrodes!")
 
-        self.dim = dim
-        self.pitch = pitch
+        # self.dim = dim
+        # self.pitch = pitch
 
     def set_electrodes(self, electrodes):
+        '''
+
+        Parameters
+        ----------
+        electrodes
+
+        Returns
+        -------
+
+        '''
         self.electrodes = electrodes
         self.number_electrode = len(electrodes)
 
-    def set_currents(self, currents_array):
-        for ii in range(self.number_electrode):
-            self.electrodes[ii].set_current(currents_array[ii])
+    def set_currents(self, currents):
+        '''
+
+        Parameters
+        ----------
+        currents_array
+
+        Returns
+        -------
+
+        '''
+        for i, el in enumerate(self.electrodes):
+            el.set_current(currents[i])
 
     def set_random_currents(self, amp=None):
+        '''
+
+        Parameters
+        ----------
+        amp
+
+        Returns
+        -------
+
+        '''
         if amp:
             currents = np.random.randn(self.number_electrode) * amp
         else:
             currents = np.random.randn(self.number_electrode) * 10
-
-        for ii in range(self.number_electrode):
-            self.electrodes[ii].set_current(currents[ii])
+        self.set_currents(currents)
 
     def reset_currents(self, amp=None):
-        currents = np.zeros(self.number_electrode)
+        '''
 
-        for ii in range(self.number_electrode):
-            self.electrodes[ii].set_current(currents[ii])
+        Parameters
+        ----------
+        amp
+
+        Returns
+        -------
+
+        '''
+        if amp is None:
+            currents = np.zeros(self.number_electrode)
+        else:
+            currents = amp*np.ones(self.number_electrode)
+        self.set_currents(currents)
+
     
     def get_currents(self):
+        '''
+
+        Returns
+        -------
+
+        '''
         currents = np.zeros(self.number_electrode)
-        for ii in range(self.number_electrode):
-            currents[ii] = self.electrodes[ii].current
+        for i, el in enumerate(self.electrodes):
+            currents[i] = el.current
         return currents
 
-    def get_electrode_array(self):
+    def get_electrodes(self):
+        '''
+
+        Returns
+        -------
+
+        '''
         return self.electrodes
 
     def get_electrode_positions(self):
         pos = np.zeros((self.number_electrode,3))
-        for ii in range(self.number_electrode):
-            pos[ii, :] = self.electrodes[ii].position
+        for i, el in enumerate(self.electrodes):
+            pos[i, :] = el.position
         return pos
 
     def compute_field(self, points):
+        '''
+
+        Parameters
+        ----------
+        points
+
+        Returns
+        -------
+
+        '''
 
         vp = []
 
@@ -375,7 +466,7 @@ def return_mea(electrode_name=None, x_plane=None, **kwargs):
 
     '''
     import yaml
-
+    # TODO make it work for python setup.py install
     if electrode_name is None:
         this_dir, this_filename = os.path.split(__file__)
         electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
