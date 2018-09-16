@@ -2,5 +2,5 @@ electrode_name: Neuropixels-128
 sortlist: null
 pitch: [32.0,20.0]
 dim: [2,64]
-radius: 12.0
+size: 12.0
 shape: square

@@ -281,6 +281,9 @@ class MEA(object):
         else:
             print('File does not exist')
 
+    def rotate(self, rotations):
+        raise NotImplementedError()
+
 
 class SquareMEA(MEA):
     '''
@@ -373,7 +376,7 @@ class SquareMEA(MEA):
 
 
 
-def get_elcoords(xoffset, dim, pitch, electrode_name, sortlist, radius, plane=None, **kwargs):
+def get_elcoords(xoffset, dim, pitch, electrode_name, sortlist, size, plane=None, **kwargs):
     '''
 
     Parameters
@@ -389,6 +392,7 @@ def get_elcoords(xoffset, dim, pitch, electrode_name, sortlist, radius, plane=No
     -------
 
     '''
+    # TODO redesign: more flexible --> positions should be in yaml
     if 'neuronexus-32' in electrode_name.lower():
         # calculate hexagonal order
         coldims = [10,12,10]
@@ -466,9 +470,9 @@ def return_mea(electrode_name=None, x_plane=None, **kwargs):
 
     '''
     import yaml
-    # TODO make it work for python setup.py install
     if electrode_name is None:
         this_dir, this_filename = os.path.split(__file__)
+        print(this_dir)
         electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
         print('Available MEA: \n', electrodes)
         return
@@ -517,3 +521,50 @@ def return_mea_info(electrode_name=None):
             elinfo = yaml.load(meafile)
 
         return elinfo
+
+def add_mea(mea_yaml_path):
+    '''Adds the mea design defined by the yaml file in the install folder
+
+    Parameters
+    ----------
+    mea_yaml_file
+
+    Returns
+    -------
+
+    '''
+    import yaml
+    import shutil
+
+    path = os.path.abspath(mea_yaml_path)
+
+    #TODO make some checks on the validity of the file
+    if os.path.isfile(mea_yaml_path):
+        this_dir, this_filename = os.path.split(__file__)
+        shutil.copy(path, os.path.join(this_dir, 'electrodes'))
+        electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
+        print('Available MEA: \n', electrodes)
+        return
+
+def remove_mea(mea_name):
+    '''Adds the mea design defined by the yaml file in the install folder
+
+    Parameters
+    ----------
+    mea_yaml_file
+
+    Returns
+    -------
+
+    '''
+    import yaml
+    import shutil
+
+    this_dir, this_filename = os.path.split(__file__)
+    electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
+    for e in electrodes:
+        if e == mea_name:
+            os.remove(os.path.join(this_dir, "electrodes", mea_name + '.yaml'))
+    electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
+    print('Available MEA: \n', electrodes)
+    return

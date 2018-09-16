@@ -2,5 +2,5 @@ electrode_name: SqMEA-6-25um
 sortlist: null
 pitch: [25.0,25.0]
 dim: [6,6]
-radius: 20.0
+size: 20.0
 shape: square
