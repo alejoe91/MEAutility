@@ -1,8 +1,8 @@
 electrode_name: tetrode
 sortlist: null
-pitch: [15, 15]
-dim: [1, 4]
+pitch: 16
+dim: 2
 size: 8.0
 shape: circle
-reach: 80.0
+type: wire
 plane: xy

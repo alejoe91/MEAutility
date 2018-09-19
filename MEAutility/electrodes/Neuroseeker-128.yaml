@@ -1,6 +1,7 @@
 electrode_name: Neuroseeker-128
 sortlist: null
-pitch: [22.5,22.5]
-dim: [4,32]
-size: 20.0
+pitch: 22.5
+dim: [32,4]
+size: 10.0
 shape: square
+type: mea

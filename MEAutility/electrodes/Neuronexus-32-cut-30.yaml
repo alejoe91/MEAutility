@@ -1,7 +1,8 @@
 electrode_name: Neuronexus-32-cut-30
 sortlist: null
-pitch: [18.0,25.0]
-dim: [3,10]
+pitch: [25.0, 18.0]
+dim: [10, 3]
+stagger: -12.5
 size: 7.5
 shape: circle
-
+type: mea

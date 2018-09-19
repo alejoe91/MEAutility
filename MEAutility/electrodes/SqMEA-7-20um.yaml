@@ -1,6 +1,7 @@
 electrode_name: SqMEA-7-20um
 sortlist: null
-pitch: [20.0,20.0]
-dim: [7,7]
-size: 15.0
+pitch: 20
+dim: 7
+size: 7.5
 shape: square
+type: mea
