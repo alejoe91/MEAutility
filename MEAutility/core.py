@@ -16,9 +16,7 @@ import os.path
 import copy
 
 class Electrode:
-    #TODO: make grid contribution for squared electrodes
-    def __init__(self, position=None, normal=None, current=None, sigma=None, max_field=None,
-                 points=None, shape=None, size=None):
+    def __init__(self, position=None, normal=None, current=None, sigma=None, max_field=None, shape=None, size=None):
         '''
 
         Parameters
@@ -47,10 +45,6 @@ class Electrode:
             self.current = current
         else:
             self.current = 0
-        if points is not None:
-            self.points = points
-        else:
-            self.points = 1
         if normal is None and self.points > 1:
             raise Exception('Provide normal direction to electrode')
         elif normal is not None:
@@ -82,35 +76,65 @@ class Electrode:
     def set_max_field(self, max_field):
         self.max_field = max_field
 
-    def field_contribution(self, pos, model='inf'):
-        if self.points == 1:
+    def field_contribution(self, pos, npoints=1, model='inf', main_axes=None):
+        if npoints == 1:
+            stim_points = self.position
             if any(pos != self.position):
                 if model == 'inf':
-                    return self.current / (4*np.pi*self.sigma*la.norm(pos-self.position))
+                    potential =  self.current / (4*np.pi*self.sigma*la.norm(pos-self.position))
                 elif model == 'semi':
-                    return self.current / (2*np.pi*self.sigma*la.norm(pos-self.position))
+                    potential = self.current / (2*np.pi*self.sigma*la.norm(pos-self.position))
             else:
                 print("WARNING: point and electrode location are coincident! Field set to MAX_FIELD: ", self.max_field)
                 return self.max_field
         else:
-            split_current = self.current / self.points
+            split_current = float(self.current) / npoints
             potential = 0
-            for p in range(self.points):
-                elec_points = []
+            stim_points = []
+            for p in range(npoints):
+                # print(p)
+                placed = False
                 if self.shape == 'square':
-                    # draw random sample in 3D
-                    arr = (2*self.size)*np.random.rand(3) - self.size
-                    point = np.cross(arr, self.normal)
-                    pass
+                    if main_axes is None:
+                        raise Exception("If electrode is 'square' main_axes should be provided")
+                    while not placed:
+                        arr = (2 * self.size) * np.random.rand(3) - self.size
+                        # rotate to align to main_axes and keep uniform distribution
+                        M = np.array([main_axes[0], main_axes[1], self.normal])
+                        arr_rot = np.dot(M, arr)
+                        point = np.cross(arr_rot, self.normal) # + self.position
+                        if np.abs(np.dot(point, main_axes[0])) < self.size and \
+                                np.abs(np.dot(point, main_axes[1])) < self.size:
+                            # print(point)
+                            placed=True
+                            stim_points.append(point + self.position)
                 else:
-                    pass
-        # add return of x-y-z components of the field
+                    while not placed:
+                        arr = (2 * self.size) * np.random.rand(3) - self.size
+                        point = np.cross(arr, self.normal) + self.position
+                        if np.linalg.norm(point - self.position) < self.size:
+                            # print(point)
+                            placed=True
+                            stim_points.append(point)
+                            
+            stim_points = np.array(stim_points)
+            for el_pos in stim_points:
+                if any(pos != el_pos):
+                    if model == 'inf':
+                        potential += split_current / (4 * np.pi * self.sigma * la.norm(pos - el_pos))
+                    elif model == 'semi':
+                        potential += split_current / (2 * np.pi * self.sigma * la.norm(pos - el_pos))
+                else:
+                    print("WARNING: point and electrode location are coincident! Field set to MAX_FIELD: ",
+                          self.max_field)
+                    potential += self.max_field
+        return potential, stim_points
 
 
 class MEA(object):
     '''This class handles properties and stimulation of general multi-electrode arrays
     '''
-    def __init__(self, positions, info, normal=None, model=None, sigma=None):
+    def __init__(self, positions, info, normal=None, points_per_electrode=None, model=None, sigma=None):
         '''
 
         Parameters
@@ -120,20 +144,45 @@ class MEA(object):
         model
         sigma
         '''
-        # TODO add rotation axis and angle
         if sigma == None:
             self.sigma = 0.3
         else:
             self.sigma = float(sigma)
+
+        if points_per_electrode == None:
+            self.points_per_electrode = 1
+        else:
+            self.points_per_electrode = int(points_per_electrode)
 
         # Assumption (electrodes on the same plane)
         if normal is None:
             self.normal = np.cross(positions[0], positions[1])
             self.normal /= np.linalg.norm(self.normal)
         else:
-            pass
+            if isinstance(normal, (list, np.ndarray)):
+                self.normal = normal
+            else:
+                self.normal = np.cross(positions[0], positions[1])
+                self.normal /= np.linalg.norm(self.normal)
 
-        self.electrodes = [Electrode(pos, normal=self.normal, sigma=self.sigma) for pos in positions]
+        if 'shape' in info.keys():
+            self.shape = info['shape']
+        else:
+            self.shape = 'square'
+
+        if 'plane' in info.keys():
+            self.plane = info['plane']
+        else:
+            self.plane = 'yz'
+
+        if self.plane == 'xy':
+            self.main_axes = np.array([[1,0,0],[0,1,0]])
+        elif self.plane == 'yz':
+            self.main_axes = np.array([[0,1,0],[0,0,1]])
+        elif self.plane == 'xz':
+            self.main_axes = np.array([[1,0,0],[0,0,1]])
+
+        self.electrodes = [Electrode(pos, normal=self.normal, sigma=self.sigma, shape=self.shape) for pos in positions]
         self.number_electrode = len(self.electrodes)
         if model is not None:
             if model == 'inf' or model=='semi':
@@ -287,23 +336,33 @@ class MEA(object):
                 print("Error: expected 3d point")
                 return
             else:
+                stim_points = []
                 for ii in range(self.number_electrode):
-                    vp += self.electrodes[ii].field_contribution(points)
-
+                    vs, sp = self.electrodes[ii].field_contribution(points, npoints=self.points_per_electrode,
+                                                                 model=self.model, main_axes=self.main_axes)
+                    vp += vs
+                    stim_points.append(sp)
         elif points.ndim == 2:
             if points.shape[1] != 3:
                 print("Error: expected 3d points")
                 return
             else:
-
                 vp = np.zeros(points.shape[0])
-                for pp in range(0, len(vp)):
+                for pp in np.arange(len(vp)):
+                    print("Computing point: ", pp+1)
                     pf = 0
+                    stim_points = []
                     cur_point = points[pp]
                     for ii in range(self.number_electrode):
-                        pf += self.electrodes[ii].field_contribution(cur_point, model=self.model)
-
+                        # print("Computing electrode: ", ii + 1)
+                        vs, sp = self.electrodes[ii].field_contribution(cur_point, npoints=self.points_per_electrode,
+                                                                     model=self.model, main_axes=self.main_axes)
+                        pf += vs
+                        stim_points.append(sp)
                     vp[pp] = pf
+        stim_points = np.array(stim_points)
+        if len(stim_points.shape) == 3:
+            stim_points = np.reshape(stim_points, (stim_points.shape[0]*stim_points.shape[1], stim_points.shape[2]))
 
         return vp
 
@@ -341,7 +400,12 @@ class MEA(object):
         '''
         M = rotation_matrix(axis, np.deg2rad(theta))
         rot_pos = np.dot(M, self.positions.T).T
+        rot_pos = np.round(rot_pos, 3)
+        rot_axis = np.dot(M, self.main_axes.T).T
+        self.main_axes = np.round(rot_axis, 3)
         normal = np.cross(rot_pos[1] - rot_pos[0], rot_pos[-1] - rot_pos[0])
+        self.normal = np.round(normal, 3)
+        self.normal /= np.linalg.norm(self.normal)
 
         self._set_positions(rot_pos)
         self._set_normal(normal)
