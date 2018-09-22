@@ -96,6 +96,7 @@ class Electrode:
             split_current = self.current / self.points
             potential = 0
             for p in range(self.points):
+                elec_points = []
                 if self.shape == 'square':
                     # draw random sample in 3D
                     arr = (2*self.size)*np.random.rand(3) - self.size
@@ -109,7 +110,7 @@ class Electrode:
 class MEA(object):
     '''This class handles properties and stimulation of general multi-electrode arrays
     '''
-    def __init__(self, positions, info, model=None, sigma=None):
+    def __init__(self, positions, info, normal=None, model=None, sigma=None):
         '''
 
         Parameters
@@ -119,14 +120,18 @@ class MEA(object):
         model
         sigma
         '''
+        # TODO add rotation axis and angle
         if sigma == None:
             self.sigma = 0.3
         else:
             self.sigma = float(sigma)
 
         # Assumption (electrodes on the same plane)
-        self.normal = np.cross(positions[0], positions[1])
-        self.normal /= np.linalg.norm(self.normal)
+        if normal is None:
+            self.normal = np.cross(positions[0], positions[1])
+            self.normal /= np.linalg.norm(self.normal)
+        else:
+            pass
 
         self.electrodes = [Electrode(pos, normal=self.normal, sigma=self.sigma) for pos in positions]
         self.number_electrode = len(self.electrodes)
@@ -210,30 +215,6 @@ class MEA(object):
         for i, el in enumerate(self.electrodes):
             pos[i, :] = el.position
         return pos
-
-
-    def _rotation_matrix(self, axis, theta):
-        '''
-
-        Parameters
-        ----------
-        axis
-        theta
-
-        Returns
-        -------
-
-        '''
-        axis = np.asarray(axis)
-        theta = np.asarray(theta)
-        axis = axis / np.linalg.norm(axis)
-        a = np.cos(theta / 2.0)
-        b, c, d = -axis * np.sin(theta / 2.0)
-        aa, bb, cc, dd = a * a, b * b, c * c, d * d
-        bc, ad, ac, ab, bd, cd = b * c, a * d, a * c, a * b, b * d, c * d
-        return np.array([[aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
-                         [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
-                         [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
 
 
     def set_electrodes(self, electrodes):
@@ -358,7 +339,7 @@ class MEA(object):
         -------
 
         '''
-        M = self._rotation_matrix(axis, np.deg2rad(theta))
+        M = rotation_matrix(axis, np.deg2rad(theta))
         rot_pos = np.dot(M, self.positions.T).T
         normal = np.cross(rot_pos[1] - rot_pos[0], rot_pos[-1] - rot_pos[0])
 
@@ -412,46 +393,6 @@ class RectMEA(MEA):
         if isinstance(self.dim, int):
             self.dim = [self.dim, self.dim]
 
-
-        # if width:
-        #     if pitch:
-        #         self.dim = width // pitch
-        #         self.pitch = pitch
-        #     elif dim:
-        #         self.pitch = width // dim
-        #         self.dim = dim
-        #     else:
-        #         raise AttributeError('If width is specified, either dim or pitch must be set as well')
-        # else:
-        #     if pitch:
-        #         self.pitch = pitch
-        #     else:
-        #         self.pitch = 15
-        #     if dim:
-        #         self.dim = dim
-        #     else:
-        #         self.dim = 10
-        #
-        # if x_plane:
-        #     self.x_plane = x_plane
-        # else:
-        #     self.x_plane = 0
-        #
-        # # Create matrix of electrodes
-        # if (self.dim % 2 is 0):
-        #     # print(self.dim, 'even self.dim')
-        #     sources_pos_y = range(-self.dim / 2 * self.pitch + self.pitch / 2, self.dim / 2 * self.pitch, self.pitch)
-        # else:
-        #     sources_pos_y = range(-(self.dim / 2) * self.pitch, (self.dim / 2) * self.pitch + self.pitch, self.pitch)
-        # sources_pos_z = sources_pos_y[::-1]
-        # sources = []
-        # for ii in sources_pos_y:
-        #     for jj in sources_pos_z:
-        #         # list converted to np.array in Electrode constructor
-        #         sources.append(Electrode([self.x_plane, ii, jj]))
-        #
-        # MEA.set_electrodes(self, sources)
-
     # override [] method
     def __getitem__(self, index):
         # return row of current matrix
@@ -469,7 +410,7 @@ class RectMEA(MEA):
         current_matrix = np.zeros(self.dim)
         for i in range(0, self.dim[0]):
             for j in range(0, self.dim[1]):
-                current_matrix[i, j] = self.get_currents()[self.dim[0] * j + i]
+                current_matrix[i, j] = self.currents[self.dim[0] * j + i]
         return current_matrix
 
     def get_electrode_matrix(self):
@@ -869,6 +810,30 @@ def remove_mea(mea_name):
     electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
     print('Available MEA: \n', electrodes)
     return
+
+
+def rotation_matrix(axis, theta):
+    '''
+
+    Parameters
+    ----------
+    axis
+    theta
+
+    Returns
+    -------
+
+    '''
+    axis = np.asarray(axis)
+    theta = np.asarray(theta)
+    axis = axis / np.linalg.norm(axis)
+    a = np.cos(theta / 2.0)
+    b, c, d = -axis * np.sin(theta / 2.0)
+    aa, bb, cc, dd = a * a, b * b, c * c, d * d
+    bc, ad, ac, ab, bd, cd = b * c, a * d, a * c, a * b, b * d, c * d
+    return np.array([[aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
+                     [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
+                     [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
 
 
 if __name__ == '__main__':
