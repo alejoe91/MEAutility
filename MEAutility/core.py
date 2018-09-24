@@ -61,74 +61,138 @@ class Electrode:
             self.size = 5
 
 
-    # def set_current(self, current):
-    #     self.current = current
-    #
-    # def set_position(self, pos):
-    #     self.position = pos
-    #
-    # def set_normal(self, norm):
-    #     self.normal = norm
-    #
-    # def set_sigma(self, sigma):
-    #     self.sigma = sigma
-    #
-    # def set_max_field(self, max_field):
-    #     self.max_field = max_field
-
     def field_contribution(self, pos, npoints=1, model='inf', main_axes=None):
-        if npoints == 1:
-            stim_points = self.position
-            if any(pos != self.position):
-                if model == 'inf':
-                    potential =  self.current / (4*np.pi*self.sigma*la.norm(pos-self.position))
-                elif model == 'semi':
-                    potential = self.current / (2*np.pi*self.sigma*la.norm(pos-self.position))
+        '''
+
+        Parameters
+        ----------
+        pos
+        npoints
+        model
+        main_axes
+
+        Returns
+        -------
+
+        '''
+        if isinstance(self.current, (float, int)):
+            # print("Current is int or float")
+            if self.current != 0:
+                if npoints == 1:
+                    stim_points = self.position
+                    if any(pos != self.position):
+                        if model == 'inf':
+                            potential = self.current / (4 * np.pi * self.sigma * la.norm(pos - self.position))
+                        elif model == 'semi':
+                            potential = self.current / (2 * np.pi * self.sigma * la.norm(pos - self.position))
+                    else:
+                        print("WARNING: point and electrode location are coincident! Field set to MAX_FIELD: ",
+                              self.max_field)
+                        potentiel = self.max_field
+                else:
+                    stim_points = []
+                    for p in range(npoints):
+                        # print(p)
+                        placed = False
+                        if self.shape == 'square':
+                            if main_axes is None:
+                                raise Exception("If electrode is 'square' main_axes should be provided")
+                            while not placed:
+                                arr = (2 * self.size) * np.random.rand(3) - self.size
+                                # rotate to align to main_axes and keep uniform distribution
+                                M = np.array([main_axes[0], main_axes[1], self.normal])
+                                arr_rot = np.dot(M.T, arr)
+                                point = np.cross(arr_rot, self.normal)  # + self.position
+                                if np.abs(np.dot(point, main_axes[0])) < self.size and \
+                                        np.abs(np.dot(point, main_axes[1])) < self.size:
+                                    # print(point)
+                                    placed = True
+                                    stim_points.append(point + self.position)
+                        else:
+                            while not placed:
+                                arr = (2 * self.size) * np.random.rand(3) - self.size
+                                point = np.cross(arr, self.normal) + self.position
+                                if np.linalg.norm(point - self.position) < self.size:
+                                    # print(point)
+                                    placed = True
+                                    stim_points.append(point)
+
+                    stim_points = np.array(stim_points)
+                    split_current = float(self.current) / npoints
+                    for el_pos in stim_points:
+                        potential = 0
+                        if any(pos != el_pos):
+                            if model == 'inf':
+                                potential += split_current / (4 * np.pi * self.sigma * la.norm(pos - el_pos))
+                            elif model == 'semi':
+                                potential += split_current / (2 * np.pi * self.sigma * la.norm(pos - el_pos))
+                        else:
+                            print("WARNING: point and electrode location are coincident! Field set to MAX_FIELD: ",
+                                  self.max_field)
+                            potential += self.max_field
             else:
-                print("WARNING: point and electrode location are coincident! Field set to MAX_FIELD: ", self.max_field)
-                return self.max_field
-        else:
-            split_current = float(self.current) / npoints
-            potential = 0
-            stim_points = []
-            for p in range(npoints):
-                # print(p)
-                placed = False
-                if self.shape == 'square':
-                    if main_axes is None:
-                        raise Exception("If electrode is 'square' main_axes should be provided")
-                    while not placed:
-                        arr = (2 * self.size) * np.random.rand(3) - self.size
-                        # rotate to align to main_axes and keep uniform distribution
-                        M = np.array([main_axes[0], main_axes[1], self.normal])
-                        arr_rot = np.dot(M.T, arr)
-                        point = np.cross(arr_rot, self.normal) # + self.position
-                        if np.abs(np.dot(point, main_axes[0])) < self.size and \
-                                np.abs(np.dot(point, main_axes[1])) < self.size:
-                            # print(point)
-                            placed=True
-                            stim_points.append(point + self.position)
+                potential = 0
+        elif isinstance(self.current, (list, np.ndarray)):
+            # print("Current is array")
+            potential = np.zeros(len(self.current))
+            for i, c in enumerate(self.current):
+                if c != 0:
+                    if npoints == 1:
+                        stim_points = self.position
+                        if any(pos != self.position):
+                            for i, c in enumerate(self.current):
+                                if model == 'inf':
+                                    potential[i] = c / (4 * np.pi * self.sigma * la.norm(pos - self.position))
+                                elif model == 'semi':
+                                    potential[i] = c / (2 * np.pi * self.sigma * la.norm(pos - self.position))
+                        else:
+                            print("WARNING: point and electrode location are coincident! Field set to MAX_FIELD: ",
+                                  self.max_field)
+                            potential = np.array([self.max_field] * len(self.current))
+                    else:
+                        stim_points = []
+                        for p in range(npoints):
+                            # print(p)
+                            placed = False
+                            if self.shape == 'square':
+                                if main_axes is None:
+                                    raise Exception("If electrode is 'square' main_axes should be provided")
+                                while not placed:
+                                    arr = (2 * self.size) * np.random.rand(3) - self.size
+                                    # rotate to align to main_axes and keep uniform distribution
+                                    M = np.array([main_axes[0], main_axes[1], self.normal])
+                                    arr_rot = np.dot(M.T, arr)
+                                    point = np.cross(arr_rot, self.normal) # + self.position
+                                    if np.abs(np.dot(point, main_axes[0])) < self.size and \
+                                            np.abs(np.dot(point, main_axes[1])) < self.size:
+                                        # print(point)
+                                        placed=True
+                                        stim_points.append(point + self.position)
+                            else:
+                                while not placed:
+                                    arr = (2 * self.size) * np.random.rand(3) - self.size
+                                    point = np.cross(arr, self.normal) + self.position
+                                    if np.linalg.norm(point - self.position) < self.size:
+                                        # print(point)
+                                        placed=True
+                                        stim_points.append(point)
+
+                        stim_points = np.array(stim_points)
+                        split_current = c / npoints
+                        for el_pos in stim_points:
+                            if any(pos != el_pos):
+                                if model == 'inf':
+                                    potential[i] += split_current / (4 * np.pi * self.sigma * la.norm(pos - el_pos))
+                                elif model == 'semi':
+                                    potential[i] += split_current / (2 * np.pi * self.sigma * la.norm(pos - el_pos))
+                            else:
+                                print("WARNING: point and electrode location are coincident! Field set to MAX_FIELD: ",
+                                      self.max_field)
+                                potential[i] += self.max_field
                 else:
-                    while not placed:
-                        arr = (2 * self.size) * np.random.rand(3) - self.size
-                        point = np.cross(arr, self.normal) + self.position
-                        if np.linalg.norm(point - self.position) < self.size:
-                            # print(point)
-                            placed=True
-                            stim_points.append(point)
-                            
-            stim_points = np.array(stim_points)
-            for el_pos in stim_points:
-                if any(pos != el_pos):
-                    if model == 'inf':
-                        potential += split_current / (4 * np.pi * self.sigma * la.norm(pos - el_pos))
-                    elif model == 'semi':
-                        potential += split_current / (2 * np.pi * self.sigma * la.norm(pos - el_pos))
-                else:
-                    print("WARNING: point and electrode location are coincident! Field set to MAX_FIELD: ",
-                          self.max_field)
-                    potential += self.max_field
-        return potential, stim_points
+                    potential[i] = 0
+                    stim_points = np.zeros((npoints, 3))
+            return potential, stim_points
 
 
 class MEA(object):
@@ -268,9 +332,15 @@ class MEA(object):
         -------
 
         '''
-        currents = np.zeros(self.number_electrode)
-        for i, el in enumerate(self.electrodes):
-            currents[i] = el.current
+        c = self.electrodes[0].current
+        if isinstance(c, (float, int)):
+            currents = np.zeros(self.number_electrode)
+            for i, el in enumerate(self.electrodes):
+                currents[i] = el.current
+        elif isinstance(c, (list, np.ndarray)):
+            currents = np.zeros((self.number_electrode, len(c)))
+            for i, el in enumerate(self.electrodes):
+                currents[i] = el.current
         return currents
 
 
@@ -345,6 +415,13 @@ class MEA(object):
         '''
         if isinstance(current_value, (float, int)):
             self.electrodes[el_id].current = current_value
+        elif isinstance(current_value, (list, np.ndarray)):
+            for el_i, el in enumerate(self.electrodes):
+                if el_i == el_id:
+                    el.current = np.array(current_value)
+                else:
+                    el.current = np.array([el.current] * len(current_value))
+
 
 
     def reset_currents(self, amp=None):
@@ -376,37 +453,62 @@ class MEA(object):
         -------
 
         '''
-        vp = []
+        c = self.electrodes[0].current
         if points.ndim == 1:
-            vp = 0
             if len(points) != 3:
                 print("Error: expected 3d point")
                 return
             else:
-                stim_points = []
-                for ii in range(self.number_electrode):
-                    vs, sp = self.electrodes[ii].field_contribution(points, npoints=self.points_per_electrode,
-                                                                 model=self.model, main_axes=self.main_axes)
-                    vp += vs
-                    stim_points.append(sp)
+                if isinstance(c, (float, int)):
+                    vp = 0
+                    stim_points = []
+                    for ii in range(self.number_electrode):
+                        vs, sp = self.electrodes[ii].field_contribution(points, npoints=self.points_per_electrode,
+                                                                        model=self.model, main_axes=self.main_axes)
+                        vp += vs
+                        stim_points.append(sp)
+                elif isinstance(c, (list, np.ndarray)):
+                    vp = np.zeros(len(c))
+                    stim_points = []
+                    for ii in range(self.number_electrode):
+                        vs, sp = self.electrodes[ii].field_contribution(points, npoints=self.points_per_electrode,
+                                                                        model=self.model, main_axes=self.main_axes)
+                        vp += vs
+                        stim_points.append(sp)
         elif points.ndim == 2:
             if points.shape[1] != 3:
                 print("Error: expected 3d points")
                 return
             else:
-                vp = np.zeros(points.shape[0])
-                for pp in np.arange(len(vp)):
-                    print("Computing point: ", pp+1)
-                    pf = 0
+                if isinstance(c, (float, int)):
+                    vp = np.zeros(points.shape[0])
+                    for pp in np.arange(len(vp)):
+                        print("Computing point: ", pp+1)
+                        pf = 0
+                        stim_points = []
+                        cur_point = points[pp]
+                        for ii in range(self.number_electrode):
+                            # print("Computing electrode: ", ii + 1)
+                            vs, sp = self.electrodes[ii].field_contribution(cur_point, npoints=self.points_per_electrode,
+                                                                         model=self.model, main_axes=self.main_axes)
+                            pf += vs
+                            stim_points.append(sp)
+                        vp[pp] = pf
+                elif isinstance(c, (list, np.ndarray)):
+                    vp = np.zeros((points.shape[0], len(c)))
                     stim_points = []
-                    cur_point = points[pp]
-                    for ii in range(self.number_electrode):
-                        # print("Computing electrode: ", ii + 1)
-                        vs, sp = self.electrodes[ii].field_contribution(cur_point, npoints=self.points_per_electrode,
-                                                                     model=self.model, main_axes=self.main_axes)
-                        pf += vs
-                        stim_points.append(sp)
-                    vp[pp] = pf
+                    for pp in np.arange(len(vp)):
+                        print("Computing point: ", pp+1)
+                        pf = np.zeros(len(c))
+                        stim_points = []
+                        cur_point = points[pp]
+                        for ii in range(self.number_electrode):
+                            # print("Computing electrode: ", ii + 1)
+                            vs, sp = self.electrodes[ii].field_contribution(cur_point, npoints=self.points_per_electrode,
+                                                                         model=self.model, main_axes=self.main_axes)
+                            pf += vs
+                            stim_points.append(sp)
+                        vp[pp] = pf
         stim_points = np.array(stim_points)
         if len(stim_points.shape) == 3:
             stim_points = np.reshape(stim_points, (stim_points.shape[0]*stim_points.shape[1], stim_points.shape[2]))
@@ -535,11 +637,11 @@ class RectMEA(MEA):
         return electrode_matrix
 
     def set_current_matrix(self, currents):
-        # current_array = np.zeros((self.number_electrode))
-        # for yy in range(self.dim):
-        #     for zz in range(self.dim):
-        #         current_array[self.dim * yy + zz] = currents[zz, yy]
-        self.set_currents(currents=np.reshape(currents, self.dim))
+        current_array = np.zeros((self.number_electrode))
+        for yy in range(self.dim):
+            for zz in range(self.dim):
+                current_array[self.dim * yy + zz] = currents[zz, yy]
+        self.set_currents(currents=current_array)
 
 
 def add_3dim(pos2d, plane, offset=None):
@@ -736,7 +838,6 @@ def get_elcoords(xoffset, dim, pitch, electrode_name, sortlist, size, plane=None
         3d points with the centers of the electrodes
 
     '''
-    # TODO redesign: more flexible --> positions should be in yaml
     if 'neuronexus-32' in electrode_name.lower():
         # calculate hexagonal order
         coldims = [10,12,10]

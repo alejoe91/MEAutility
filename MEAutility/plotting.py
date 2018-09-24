@@ -4,20 +4,6 @@ import numpy as np
 from .core import MEA, RectMEA, rotation_matrix
 import matplotlib
 import pylab as plt
-import matplotlib.patches as patches
-from matplotlib.path import Path
-from matplotlib.collections import PatchCollection
-
-
-from mpl_toolkits.mplot3d import Axes3D
-from mpl_toolkits.mplot3d import art3d
-# import MEAutility as MEA
-# from matplotlib.patches import Ellipse
-# import matplotlib.animation as animation
-# from matplotlib.collections import PolyCollection
-from matplotlib import colors as mpl_colors
-# import mpl_toolkits.mplot3d as a3
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 
 def plot_probe(mea, ax=None, xlim=None, ylim=None):
@@ -34,6 +20,10 @@ def plot_probe(mea, ax=None, xlim=None, ylim=None):
     -------
 
     '''
+    import matplotlib.patches as patches
+    from matplotlib.path import Path
+    from matplotlib.collections import PatchCollection
+
     if ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -121,6 +111,11 @@ def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1
     -------
 
     '''
+    from mpl_toolkits.mplot3d import Axes3D
+    from mpl_toolkits.mplot3d import art3d
+    from matplotlib import colors as mpl_colors
+    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+
     if ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1, projection='3d')
@@ -207,6 +202,203 @@ def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1
         ax.set_zlim(zlim)
 
     return ax
+
+# # TODO 3d surf plot
+# def plot_v_plane(mea, plane, offset=100):
+#     '''
+#
+#     Parameters
+#     ----------
+#     mea
+#     plane
+#
+#     Returns
+#     -------
+#
+#     '''
+#     if plane == 'xy':
+#         x_vec = np.arange(1, bound, unit)
+#         y_vec = np.arange(-bound, bound, unit)
+#         z_vec = np.arange(-bound, bound, unit)
+#     elif plane == 'yz':
+#
+#     elif plane == 'xz':
+#
+#
+#     x, y, z = np.meshgrid(x_vec, y_vec, z_vec)
+#
+#     v_grid = np.zeros((len(y_vec), len(z_vec)))
+#
+#     # maintain matrix orientation (row - z, column - y, [0,0] - top left corner)
+#     z_vec = z_vec[::-1]
+#
+#     for ii in range(len(z_vec)):
+#         for jj in range(len(y_vec)):
+#             v_grid[ii, jj] = mea.compute_field(np.array([15, y_vec[jj], z_vec[ii]]))
+#
+#
+#     fig = plt.figure(figsize=[6, 16])
+#     gs = gridspec.GridSpec(9,
+#                            10,
+#                            hspace=0.,
+#                            wspace=0.)
+#     fig.subplots_adjust(left=0.01, right=.8, top=1., bottom=0.01)
+#     elev = 30
+#     azim = -60
+#     dist = 10
+#     # Add surface
+#     y_plane, z_plane = np.meshgrid(y_vec, z_vec)
+#
+#     v_grid_orig = np.zeros((len(y_vec), len(z_vec)))
+#
+#     # maintain matrix orientation (row - z, column - y, [0,0] - top left corner)
+#
+#     for ii in range(len(z_vec)):
+#         for jj in range(len(y_vec)):
+#             v_grid_orig[ii, jj] = mea.compute_field(np.array(
+#                 [15, y_plane[ii][jj], z_plane[ii][jj]]))
+#
+#     # ax1 = fig.add_subplot(311, projection='3d')
+#     ax1 = fig.add_subplot(gs[0:3, 0:9], projection='3d')
+#     # ax1 = plt.subplot2grid((3, 3), (1, 0), colspan=2)
+#
+#     ax1.view_init(elev=elev, azim=azim)
+#     surf1 = ax1.plot_surface(y_plane,
+#                              z_plane,
+#                              v_grid_orig,
+#                              cmap=cm.coolwarm,
+#                              alpha=0.3,
+#                              zorder=0,
+#                              antialiased=True)
+#     # ax1.contour(y_plane,
+#     #             z_plane,
+#     #             v_grid_orig,
+#     #             cmap=cm.coolwarm,
+#     #             extend3d=True,)
+#
+#     ax1.set_xticklabels([])
+#     ax1.set_yticklabels([])
+#     ax1.set_zticklabels([])
+#     # Get rid of the panes
+#     ax1.w_xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+#     ax1.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+#     ax1.w_zaxis.set_pane_color((1.0, 1.0, 1., 0.0))
+#
+#     # Get rid of the spines
+#     ax1.w_xaxis.line.set_color((1.0, 1.0, 1., 0.0))
+#     ax1.w_yaxis.line.set_color((1.0, 1.0, 1., 0.0))
+#     ax1.w_zaxis.line.set_color((1.0, 1.0, 1., 0.0))
+#     ax1.dist = 10..
+#     cax1 = fig.add_subplot(gs[1, 9:])
+#     cbar_ax1 = fig.colorbar(surf1, cax=cax1)
+#     cbar_ax1.set_label('mV', rotation=270)
+#
+#     ax2 = fig.add_subplot(gs[3:6, 0:9], projection='3d')
+#     cax2 = fig.add_subplot(gs[4, 9:])
+#     ax2.view_init(elev=elev, azim=azim)
+#     ax2.set_xlim3d(-30, 30)
+#     ax2.set_ylim3d(-30, 30)
+#     ax2.set_zlim3d(0, 30)
+#     ax2.dist = 10..
+#     soma_length = 3.
+#     soma_radius = 1.
+#     axon_length = 15.
+#     axon_radius = .2
+#     n_points = 20.
+#
+#     verts = []
+#     elec_size = 5
+#     for e in range(mea.number_electrode):
+#         yy = [mea.electrodes[e].position[1] - elec_size,
+#               mea.electrodes[e].position[1] - elec_size,
+#               mea.electrodes[e].position[1] + elec_size,
+#               mea.electrodes[e].position[1] + elec_size]
+#         zz = [mea.electrodes[e].position[2] + elec_size,
+#               mea.electrodes[e].position[2] - elec_size,
+#               mea.electrodes[e].position[2] - elec_size,
+#               mea.electrodes[e].position[2] + elec_size]
+#         xx = [0, 0, 0, 0]
+#         verts.append(list(zip(yy, zz, xx)))
+#
+#     jet = plt.get_cmap('jet')
+#     colors = mea.get_currents() / np.max(np.abs(mea.get_current_matrix())) + 1
+#     curr = ax2.add_collection3d(Poly3DCollection(verts,
+#                                                  #                                            zorder=1,
+#                                                  alpha=0.8,
+#                                                  color=jet(colors)))
+#     currents = mea.get_currents() / 1000
+#
+#     m = cm.ScalarMappable(cmap=cm.jet)
+#     bounds = np.round(np.linspace(np.min(currents), np.max(currents), 7))
+#     norm = mpl_colors.BoundaryNorm(bounds, cm.jet)
+#     m.set_array(currents)
+#     cbar_ax2 = plt.colorbar(m, cax=cax2, norm=norm, boundaries=bounds)
+#     cbar_ax2.set_label('mA', rotation=270)
+#     # ghost_axis = ax2.scatter(xx, yy, zz, color=jet(colors))
+#     # cax2 = fig.add_subplot(gs[4, 9:])
+#     # fig.colorbar(ghost_axis, cax=cax2)
+#     # ghost_axis.axis('off')
+#     # cmap = plt.cm.jet
+#     # norm = mpl.colors.BoundaryNorm(colors, cmap)
+#
+#     # cb = mpl.colorbar.ColorbarBase(ax2,
+#     #                                cmap=cax2,
+#     #                                norm=norm)
+#
+#     ax2.set_xticklabels([])
+#     ax2.set_yticklabels([])
+#
+#     # Get rid of the panes
+#     ax2.w_xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+#     ax2.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+#     ax2.w_zaxis.set_pane_color((1.0, 1.0, 1., 0.0))
+#
+#     # Get rid of the spines
+#     ax2.w_xaxis.line.set_color((1.0, 1.0, 1., 0.0))
+#     ax2.w_yaxis.line.set_color((1.0, 1.0, 1., 0.0))
+#     ax2.w_zaxis.line.set_color((1.0, 1.0, 1., 0.0))
+#
+#     # ax2.set_xlabel('Y [um]')
+#     # ax2.set_ylabel('Z [um]')
+#     ax2.set_zlabel('Z [um]')
+#
+#     # last axis
+#     ax0 = fig.add_subplot(gs[6:9, 0:9], projection='3d')
+#
+#     ax0.view_init(elev=elev, azim=azim)
+#     ax0.dist = 10..
+#     # plot data points.
+#     # ax0.scatter([mea.electrodes[elec].position[1] for elec in range(0, mea.number_electrode)],
+#     #             [mea.electrodes[elec].position[2] for elec in range(0, mea.number_electrode)],
+#     #             marker='o', c='b', s=50, zorder=2)
+#     ax0.set_xlabel('y ($\mu$m)', fontsize=20)
+#     ax0.set_ylabel('z ($\mu$m)', fontsize=20)
+#     ax0.xaxis.set_tick_params(labelsize=15, width=5)
+#     ax0.yaxis.set_tick_params(labelsize=15, width=5)
+#
+#     # ax0.set_xticklabels([])
+#     # ax0.set_yticklabels([])
+#     ax0.set_zticks([])
+#     # Get rid of the panes
+#     ax0.w_xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+#     ax0.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+#     ax0.w_zaxis.set_pane_color((1.0, 1.0, 1., 0.0))
+#
+#     # Get rid of the spines
+#     ax0.w_xaxis.line.set_color((1.0, 1.0, 1., 0.0))
+#     ax0.w_yaxis.line.set_color((1.0, 1.0, 1., 0.0))
+#     ax0.w_zaxis.line.set_color((1.0, 1.0, 1., 0.0))
+#
+#     ax0.grid(b=False)
+#
+#     ax0.set_zlim3d(0, 0.1)
+#
+#     CS = ax0.contourf(y_vec,
+#                       z_vec,
+#                       v_grid_orig,
+#                       zdir='z',
+#                       offset=-0.0001,
+#                       cmap=cm.coolwarm)
 
 
 def plot_cylinder_3d(bottom, direction, length, radius, color='k', alpha=.5, ax=None,
