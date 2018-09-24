@@ -92,7 +92,7 @@ def plot_probe(mea, ax=None, xlim=None, ylim=None):
             ax.add_patch(elec)
 
     ax.set_xlim(probe_left - 5*elec_size, probe_right + 5*elec_size)
-    ax.set_ylim(prob_bottom - 5*elec_size, probe_top + 5*elec_size)
+    ax.set_ylim(probe_bottom - 5*elec_size, probe_top + 5*elec_size)
     ax.axis('equal')
 
     if xlim:
@@ -103,7 +103,7 @@ def plot_probe(mea, ax=None, xlim=None, ylim=None):
     return ax
 
 
-def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1000):
+def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1000, type='shank'):
     '''
 
     Parameters
@@ -115,6 +115,7 @@ def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1
     ylim
     zlim
     top
+    type
 
     Returns
     -------
@@ -155,21 +156,28 @@ def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1
                     np.max(np.dot(mea.positions, mea.main_axes[1])) * mea.main_axes[1]]
     center_y = (min_y + max_y) / 2.
 
-    probe_height = 200
-    probe_top = max_y + probe_height * mea.main_axes[1]
-    probe_bottom = min_y - probe_height * mea.main_axes[1]
-    probe_corner = min_y - 0.1 * probe_height * mea.main_axes[1]
-    probe_left = min_x - 0.1 * probe_height * mea.main_axes[0]
-    probe_right = max_x + 0.1 * probe_height * mea.main_axes[0]
+    if type == 'shank':
+        probe_height = 200
+        probe_top = max_y + probe_height * mea.main_axes[1]
+        probe_bottom = min_y - probe_height * mea.main_axes[1]
+        probe_corner = min_y - 0.1 * probe_height * mea.main_axes[1]
+        probe_left = min_x - 0.1 * probe_height * mea.main_axes[0]
+        probe_right = max_x + 0.1 * probe_height * mea.main_axes[0]
 
-
-    verts = np.array([
-        min_x - 2 * mea.size * mea.main_axes[0] + probe_top,  # left, bottom
-        min_x - 2 * mea.size * mea.main_axes[0] + probe_corner,  # left, top
-        center_x + probe_bottom,  # right, top
-        max_x + 2 * mea.size * mea.main_axes[0] + probe_corner,  # right, bottom
-        max_x + 2 * mea.size * mea.main_axes[0] + probe_top,
-    ])
+        verts = np.array([
+            min_x - 2 * mea.size * mea.main_axes[0] + probe_top,  # left, bottom
+            min_x - 2 * mea.size * mea.main_axes[0] + probe_corner,  # left, top
+            center_x + probe_bottom,  # right, top
+            max_x + 2 * mea.size * mea.main_axes[0] + probe_corner,  # right, bottom
+            max_x + 2 * mea.size * mea.main_axes[0] + probe_top,
+        ])
+    elif type == 'planar':
+        verts = np.array([
+            min_x - 2 * mea.size * mea.main_axes[0] + max_y + 2 * mea.size * mea.main_axes[1],  # left, bottom
+            min_x - 2 * mea.size * mea.main_axes[0] + (min_y - 2 * mea.size * mea.main_axes[1]),
+            max_x + 2 * mea.size * mea.main_axes[0] + (min_y - 2 * mea.size * mea.main_axes[1]),
+            max_x + 2 * mea.size * mea.main_axes[0] + max_y + 2 * mea.size * mea.main_axes[1],
+        ])
 
     r = Poly3DCollection([verts])
     # r.set_facecolor('green')

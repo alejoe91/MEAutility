@@ -243,7 +243,7 @@ class MEA(object):
 
         '''
         for i, el in enumerate(self.electrodes):
-            el.set_position(positions[i])
+            el.position = positions[i]
 
 
     def _set_normal(self, normal):
