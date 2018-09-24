@@ -166,12 +166,10 @@ def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1
     verts = np.array([
         min_x - 2 * mea.size * mea.main_axes[0] + probe_top,  # left, bottom
         min_x - 2 * mea.size * mea.main_axes[0] + probe_corner,  # left, top
-        center_x - probe_bottom,  # right, top
+        center_x + probe_bottom,  # right, top
         max_x + 2 * mea.size * mea.main_axes[0] + probe_corner,  # right, bottom
         max_x + 2 * mea.size * mea.main_axes[0] + probe_top,
     ])
-
-    raise Exception()
 
     r = Poly3DCollection([verts])
     # r.set_facecolor('green')
@@ -183,14 +181,24 @@ def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1
     ax.add_collection3d(r)
 
 
-    if xlim:
+    if xlim is not None:
         ax.set_xlim(xlim)
-    if ylim:
+    else:
+        xlim = [np.min(mea.positions[:,0]), np.max(mea.positions[:,0])]
+        print(xlim)
+        ax.set_xlim(xlim)
+    if ylim is not None:
         ax.set_ylim(ylim)
-    if zlim:
+    else:
+        ylim = [np.min(mea.positions[:, 1]), np.max(mea.positions[:, 1])]
+        ax.set_ylim(ylim)
+    if zlim is not None:
+        ax.set_zlim(zlim)
+    else:
+        zlim = [np.min(mea.positions[:, 2]), np.max(mea.positions[:, 2])]
         ax.set_zlim(zlim)
 
-    # return rot_pos
+    return ax
 
 
 def plot_cylinder_3d(bottom, direction, length, radius, color='k', alpha=.5, ax=None,
@@ -264,9 +272,16 @@ def make_3d_ellipse_patch(size, axis_1, axis_2, position, ax, facecolor='orange'
 
     verts = path.vertices  # Get the vertices in 2D
 
-    M = [axis_1, axis_2, np.cross(axis_1, axis_2)]  # Get the rotation matrix
+    M = np.array([axis_1, axis_2, np.cross(axis_1, axis_2)])  # Get the rotation matrix
 
-    p._segment3d = np.array([np.dot(M, (x, y, 0)) for x, y in verts])
+    verts_3d = np.array([(x, y, 0) for x, y in verts])
+    verts_3d_rot = np.array([np.dot(M, (x, y, 0)) for x, y in verts])
+
+    print(verts_3d)
+    print(verts_3d_rot)
+    print(M)
+
+    p._segment3d = np.array([np.dot(M.T, (x, y, 0)) for x, y in verts])
     p._segment3d += position
 
     return p

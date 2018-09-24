@@ -101,7 +101,7 @@ class Electrode:
                         arr = (2 * self.size) * np.random.rand(3) - self.size
                         # rotate to align to main_axes and keep uniform distribution
                         M = np.array([main_axes[0], main_axes[1], self.normal])
-                        arr_rot = np.dot(M, arr)
+                        arr_rot = np.dot(M.T, arr)
                         point = np.cross(arr_rot, self.normal) # + self.position
                         if np.abs(np.dot(point, main_axes[0])) < self.size and \
                                 np.abs(np.dot(point, main_axes[1])) < self.size:
@@ -221,6 +221,10 @@ class MEA(object):
         for i, el in enumerate(self.electrodes):
             el.set_current(current_values[i])
 
+    # @currents.setter
+    # def currents(self, el_id, current_value):
+    #     self.electrodes[el_id] = current_value
+
 
     def _set_positions(self, positions):
         '''
@@ -322,7 +326,7 @@ class MEA(object):
         self.currents(currents)
 
 
-    def compute_field(self, points):
+    def compute_field(self, points, return_stim_points=False):
         '''
 
         Parameters
@@ -370,7 +374,10 @@ class MEA(object):
         if len(stim_points.shape) == 3:
             stim_points = np.reshape(stim_points, (stim_points.shape[0]*stim_points.shape[1], stim_points.shape[2]))
 
-        return vp
+        if return_stim_points:
+            return vp, stim_points
+        else:
+            return vp
 
 
     def save_currents(self, filename):
