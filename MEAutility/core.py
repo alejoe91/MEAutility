@@ -61,20 +61,20 @@ class Electrode:
             self.size = 5
 
 
-    def set_current(self, current):
-        self.current = current
-
-    def set_position(self, pos):
-        self.position = pos
-
-    def set_normal(self, norm):
-        self.normal = norm
-
-    def set_sigma(self, sigma):
-        self.sigma = sigma
-
-    def set_max_field(self, max_field):
-        self.max_field = max_field
+    # def set_current(self, current):
+    #     self.current = current
+    #
+    # def set_position(self, pos):
+    #     self.position = pos
+    #
+    # def set_normal(self, norm):
+    #     self.normal = norm
+    #
+    # def set_sigma(self, sigma):
+    #     self.sigma = sigma
+    #
+    # def set_max_field(self, max_field):
+    #     self.max_field = max_field
 
     def field_contribution(self, pos, npoints=1, model='inf', main_axes=None):
         if npoints == 1:
@@ -219,9 +219,16 @@ class MEA(object):
                 len(current_values) != self.number_electrode:
             raise Exception("Number of currents should be equal to number of electrodes %d" % self.number_electrode)
         for i, el in enumerate(self.electrodes):
-            el.set_current(current_values[i])
+            el.current = current_values[i]
 
-
+    # override [] method
+    def __getitem__(self, index):
+        # return row of current matrix
+        if index < self.number_electrode:
+            return self.electrodes[index]
+        else:
+            print("Index out of bound")
+            return None
 
 
     def _set_positions(self, positions):
@@ -304,7 +311,7 @@ class MEA(object):
             currents = np.random.randn(self.number_electrode) * amp
         else:
             currents = np.random.randn(self.number_electrode) * 10
-        self.currents(currents)
+        self.currents = currents
 
 
     def set_currents(self, current_values):
@@ -322,9 +329,10 @@ class MEA(object):
                 len(current_values) != self.number_electrode:
             raise Exception("Number of currents should be equal to number of electrodes %d" % self.number_electrode)
         for i, el in enumerate(self.electrodes):
-            el.set_current(current_values[i])
+            el.current = current_values[i]
 
-    def set_currents(self, el_id, current_value):
+
+    def set_current(self, el_id, current_value):
         '''
 
         Parameters
@@ -335,8 +343,8 @@ class MEA(object):
         -------
 
         '''
-        if not isinstance(current_values, (float, int)):
-            el.set_current(current_values[el_id])
+        if isinstance(current_value, (float, int)):
+            self.electrodes[el_id].current = current_value
 
 
     def reset_currents(self, amp=None):
@@ -354,7 +362,7 @@ class MEA(object):
             currents = np.zeros(self.number_electrode)
         else:
             currents = amp*np.ones(self.number_electrode)
-        self.currents(currents)
+        self.currents = currents
 
 
     def compute_field(self, points, return_stim_points=False):
@@ -368,9 +376,7 @@ class MEA(object):
         -------
 
         '''
-
         vp = []
-
         if points.ndim == 1:
             vp = 0
             if len(points) != 3:
