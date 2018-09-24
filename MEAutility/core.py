@@ -221,9 +221,7 @@ class MEA(object):
         for i, el in enumerate(self.electrodes):
             el.set_current(current_values[i])
 
-    # @currents.setter
-    # def currents(self, el_id, current_value):
-    #     self.electrodes[el_id] = current_value
+
 
 
     def _set_positions(self, positions):
@@ -307,6 +305,39 @@ class MEA(object):
         else:
             currents = np.random.randn(self.number_electrode) * 10
         self.currents(currents)
+
+
+    def set_currents(self, current_values):
+        '''
+
+        Parameters
+        ----------
+        current_values
+
+        Returns
+        -------
+
+        '''
+        if not isinstance(current_values, (list, np.ndarray)) or \
+                len(current_values) != self.number_electrode:
+            raise Exception("Number of currents should be equal to number of electrodes %d" % self.number_electrode)
+        for i, el in enumerate(self.electrodes):
+            el.set_current(current_values[i])
+
+    def set_currents(self, el_id, current_value):
+        '''
+
+        Parameters
+        ----------
+        current_values
+
+        Returns
+        -------
+
+        '''
+        if not isinstance(current_values, (float, int)):
+            el.set_current(current_values[el_id])
+
 
     def reset_currents(self, amp=None):
         '''
@@ -795,6 +826,16 @@ def return_mea(electrode_name=None, info=None):
             else:
                 mea = MEA(positions=pos, info=elinfo)
             return mea
+        elif os.path.isfile(os.path.join(electrode_path, electrode_name + '.yml')):
+            with open(os.path.join(electrode_path, electrode_name + '.yml')) as meafile:
+                elinfo = yaml.load(meafile)
+            pos = get_positions(elinfo)
+            # create MEA object
+            if check_if_rect(elinfo):
+                mea = RectMEA(positions=pos, info=elinfo)
+            else:
+                mea = MEA(positions=pos, info=elinfo)
+            return mea
         else:
             print("MEA model named %s not found" % electrode_name)
             this_dir, this_filename = os.path.split(__file__)
@@ -837,6 +878,10 @@ def return_mea_info(electrode_name=None):
             with open(os.path.join(electrode_path, electrode_name + '.yaml')) as meafile:
                 elinfo = yaml.load(meafile)
             return elinfo
+        elif os.path.isfile(os.path.join(electrode_path, electrode_name + '.yml')):
+            with open(os.path.join(electrode_path, electrode_name + '.yml')) as meafile:
+                elinfo = yaml.load(meafile)
+            return elinfo
         else:
             print("MEA model named %s not found" % electrode_name)
             this_dir, this_filename = os.path.split(__file__)
@@ -860,11 +905,20 @@ def add_mea(mea_yaml_path):
 
     path = os.path.abspath(mea_yaml_path)
 
-    #TODO make some checks on the validity of the file
-    if os.path.isfile(mea_yaml_path):
+    if path.endswith('.yaml') or path.endswith('.yml') and os.path.isfile(path):
+        with open(path, 'r') as meafile:
+            elinfo = yaml.load(meafile)
+            if 'pos' not in elinfo.keys():
+                if 'dim' not in elinfo.keys() or 'pitch' not in elinfo.keys():
+                    raise AttributeError("The yaml file should contin either a list of 3d or 2d positions 'pos' or "
+                                         "intormation about dimension and pitch ('dim' and 'pitch')")
+
         this_dir, this_filename = os.path.split(__file__)
         shutil.copy(path, os.path.join(this_dir, 'electrodes'))
-        electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
+        if path.endswith('.yaml'):
+            electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
+        elif path.endswith('.yml'):
+            electrodes = [f[:-4] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
         print('Available MEA: \n', electrodes)
         return
 
@@ -880,10 +934,15 @@ def remove_mea(mea_name):
 
     '''
     this_dir, this_filename = os.path.split(__file__)
-    electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
+    electrodes = [f for f in os.listdir(os.path.join(this_dir, "electrodes"))]
     for e in electrodes:
-        if e == mea_name:
-            os.remove(os.path.join(this_dir, "electrodes", mea_name + '.yaml'))
+        if mea_name in e:
+            if os.path.isfile(os.path.join(this_dir, "electrodes", mea_name + '.yaml')):
+                os.remove(os.path.join(this_dir, "electrodes", mea_name + '.yaml'))
+                print("Removed: ", os.path.join(this_dir, "electrodes", mea_name + '.yaml'))
+            elif os.path.isfile(os.path.join(this_dir, "electrodes", mea_name + '.yml')):
+                os.remove(os.path.join(this_dir, "electrodes", mea_name + '.yml'))
+                print("Removed: ", os.path.join(this_dir, "electrodes", mea_name + '.yml'))
     electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
     print('Available MEA: \n', electrodes)
     return
