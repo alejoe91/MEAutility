@@ -175,6 +175,11 @@ class MEA(object):
         else:
             self.plane = 'yz'
 
+        if 'size' in info.keys():
+            self.size = info['size']
+        else:
+            self.size = 5
+
         if self.plane == 'xy':
             self.main_axes = np.array([[1,0,0],[0,1,0]])
         elif self.plane == 'yz':
@@ -182,7 +187,8 @@ class MEA(object):
         elif self.plane == 'xz':
             self.main_axes = np.array([[1,0,0],[0,0,1]])
 
-        self.electrodes = [Electrode(pos, normal=self.normal, sigma=self.sigma, shape=self.shape) for pos in positions]
+        self.electrodes = [Electrode(pos, normal=self.normal, sigma=self.sigma, shape=self.shape,
+                                     size=self.size) for pos in positions]
         self.number_electrode = len(self.electrodes)
         if model is not None:
             if model == 'inf' or model=='semi':

@@ -4,27 +4,28 @@ import numpy as np
 from .core import MEA, RectMEA, rotation_matrix
 import matplotlib
 import pylab as plt
+import matplotlib.patches as patches
+from matplotlib.path import Path
+from matplotlib.collections import PatchCollection
+
 
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d import art3d
-import MEAutility as MEA
-from matplotlib.patches import Ellipse
-import matplotlib.animation as animation
-from matplotlib.collections import PolyCollection
+# import MEAutility as MEA
+# from matplotlib.patches import Ellipse
+# import matplotlib.animation as animation
+# from matplotlib.collections import PolyCollection
 from matplotlib import colors as mpl_colors
-import mpl_toolkits.mplot3d as a3
+# import mpl_toolkits.mplot3d as a3
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 
-def plot_probe(mea_pos, mea_pitch, shape='square', elec_dim=10, axis=None, xlim=None, ylim=None):
+def plot_probe(mea, ax=None, xlim=None, ylim=None):
     '''
-
+    
     Parameters
     ----------
-    mea_pos
-    mea_pitch
-    shape
-    elec_dim
+    mea
     axis
     xlim
     ylim
@@ -33,47 +34,35 @@ def plot_probe(mea_pos, mea_pitch, shape='square', elec_dim=10, axis=None, xlim=
     -------
 
     '''
-    from matplotlib.path import Path
-    import matplotlib.patches as patches
-    from matplotlib.collections import PatchCollection
-
-    if axis:
-        ax = axis
-    else:
+    if ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(111)
 
-    n_elec = mea_pos.shape[0]
+    n_elec = mea.positions.shape[0]
+    elec_size = mea.size
+    mea_pos = np.array([np.dot(mea.positions, mea.main_axes[0]), np.dot(mea.positions, mea.main_axes[1])]).T
 
-    y_pitch = mea_pitch[0]
-    z_pitch = mea_pitch[1]
+    min_x, max_x = [np.min(np.dot(mea.positions, mea.main_axes[0])),
+                    np.max(np.dot(mea.positions, mea.main_axes[0]))]
+    center_x = (min_x + max_x)/2.
+    min_y, max_y = [np.min(np.dot(mea.positions, mea.main_axes[1])),
+                    np.max(np.dot(mea.positions, mea.main_axes[1]))]
+    center_y = (min_y + max_y)/2.
 
-
-    elec_size = elec_dim / 2
-    elec_size = (np.min([y_pitch,z_pitch]) - 0.3*np.min([y_pitch,z_pitch]))/2.
-    elec_dim = (np.min([y_pitch,z_pitch]) - 0.3*np.min([y_pitch,z_pitch]))
-
-    min_y = np.min(mea_pos[:,1])
-    max_y = np.max(mea_pos[:,1])
-    min_z = np.min(mea_pos[:,2])
-    max_z = np.max(mea_pos[:,2])
-    center_y = 0
     probe_height = 200
-    probe_top = max_z + probe_height
-    prob_bottom = min_z - probe_height
-    prob_corner = min_z - 0.1*probe_height
-    probe_left = min_y - 0.1*probe_height
-    probe_right = max_y + 0.1*probe_height
-
-
-
+    probe_top = max_y + probe_height
+    probe_bottom = min_y - probe_height
+    probe_corner = min_y - 0.1*probe_height
+    probe_left = min_x - 0.1*probe_height
+    probe_right = max_x + 0.1*probe_height
+    
     verts = [
-        (min_y - 2*elec_dim, probe_top),  # left, bottom
-        (min_y - 2*elec_dim, prob_corner),  # left, top
-        (center_y, prob_bottom),  # right, top
-        (max_y + 2*elec_dim, prob_corner),  # right, bottom
-        (max_y + 2*elec_dim, probe_top),
-        (min_y - 2 * elec_dim, max_z + 2 * elec_dim) # ignored
+        (min_x - 2*elec_size, probe_top),  # left, bottom
+        (min_x - 2*elec_size, probe_corner),  # left, top
+        (center_x, probe_bottom),  # right, top
+        (max_x + 2*elec_size, probe_corner),  # right, bottom
+        (max_x + 2*elec_size, probe_top),
+        (min_x - 2 * elec_size, max_y + 2 * elec_size) # ignored
     ]
 
     codes = [Path.MOVETO,
@@ -89,87 +78,109 @@ def plot_probe(mea_pos, mea_pitch, shape='square', elec_dim=10, axis=None, xlim=
     patch = patches.PathPatch(path, facecolor='green', edgecolor='k', lw=0.5, alpha=0.3)
     ax.add_patch(patch)
 
-    if shape == 'square':
+    if mea.shape == 'square':
         for e in range(n_elec):
-            elec = patches.Rectangle((mea_pos[e, 1] - elec_size, mea_pos[e, 2] - elec_size), elec_dim,  elec_dim,
+            elec = patches.Rectangle((mea_pos[e, 0] - elec_size, mea_pos[e, 1] - elec_size), 2*elec_size,  2*elec_size,
                                      alpha=0.7, facecolor='orange', edgecolor=[0.3, 0.3, 0.3], lw=0.5)
 
             ax.add_patch(elec)
-    elif shape == 'circle':
+    elif mea.shape == 'circle':
         for e in range(n_elec):
-            elec = patches.Circle((mea_pos[e, 1], mea_pos[e, 2]), elec_size,
+            elec = patches.Circle((mea_pos[e, 0], mea_pos[e, 1]), elec_size,
                                      alpha=0.7, facecolor='orange', edgecolor=[0.3, 0.3, 0.3], lw=0.5)
 
             ax.add_patch(elec)
 
-    ax.set_xlim(probe_left - 5*elec_dim, probe_right + 5*elec_dim)
-    ax.set_ylim(prob_bottom - 5*elec_dim, probe_top + 5*elec_dim)
-    # ax.axis('equal')
+    ax.set_xlim(probe_left - 5*elec_size, probe_right + 5*elec_size)
+    ax.set_ylim(prob_bottom - 5*elec_size, probe_top + 5*elec_size)
+    ax.axis('equal')
 
     if xlim:
         ax.set_xlim(xlim)
     if ylim:
         ax.set_ylim(ylim)
 
+    return ax
 
-def plot_probe_3d(mea_pos, rot_axis, theta, pos=[0, 0, 0], shape='square', alpha=.5,
-                  elec_dim=15, probe_name=None, ax=None, xlim=None, ylim=None, zlim=None, top=1000):
+
+def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1000):
     '''
 
     Parameters
     ----------
-    mea_pos
-    mea_pitch
-    shape
-    elec_dim
-    axis
+    mea
+    alpha
+    ax
     xlim
     ylim
+    zlim
+    top
 
     Returns
     -------
 
     '''
-    from matplotlib.patches import Circle
-
     if ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1, projection='3d')
 
-    M = rotation_matrix(rot_axis, theta)
-    rot_pos = np.dot(M, mea_pos.T).T
-    rot_pos += np.array(pos)
+    elec_list = []
 
-    normal = np.cross(rot_pos[1]-rot_pos[0], rot_pos[-1]-rot_pos[0])
+    if mea.shape == 'square':
+        for pos in mea.positions:
+                # elec = patches.Rectangle((mea_pos[e, 0] - elec_size, mea_pos[e, 1] - elec_size), 2 * elec_size,
+                #                          2 * elec_size,
+                #                          alpha=0.7, facecolor='orange', edgecolor=[0.3, 0.3, 0.3], lw=0.5)
+            elec = np.array([pos - mea.size * mea.main_axes[0] - mea.size * mea.main_axes[1],
+                             pos - mea.size * mea.main_axes[0] + mea.size * mea.main_axes[1],
+                             pos + mea.size * mea.main_axes[0] + mea.size * mea.main_axes[1],
+                             pos + mea.size * mea.main_axes[0] - mea.size * mea.main_axes[1]])
 
-    if probe_name is not None:
-        if 'neuronexus' in probe_name.lower():
-            for elec in rot_pos:
-                p = Circle((0, 0), elec_dim/2., facecolor='orange', alpha=alpha)
-                ax.add_patch(p)
-                _make_patch_3d(p, rot_axis, theta+np.pi/2.)
-                _pathpatch_translate(p, elec)
+            elec_list.append(elec)
 
-        tip_el_y = np.min(mea_pos[:, 2])
-        bottom = tip_el_y - 62
-        cz = 62 + np.sqrt(22**2 - 18**2) + 9*25
-        top = top
+        el = Poly3DCollection(elec_list)
+        alpha = (0.7,)
+        el_col = mpl_colors.to_rgb('orange') + alpha
+        el.set_facecolor(el_col)
+        ax.add_collection3d(el)
+    elif mea.shape == 'circle':
+        for pos in mea.positions:
+            p = make_3d_ellipse_patch(mea.size, mea.main_axes[0], mea.main_axes[1],
+                                  pos, ax, facecolor='orange', edgecolor=None, alpha=0.7)
 
-        x_shank = [0, 0, 0, 0, 0, 0, 0]
-        y_shank = [-57, -57, -31, 0, 31, 57, 57]
-        z_shank = [bottom + top, bottom + cz, bottom + 62, bottom, bottom + 62, bottom + cz, bottom + top]
+    min_x, max_x = [np.min(np.dot(mea.positions, mea.main_axes[0])) * mea.main_axes[0],
+                    np.max(np.dot(mea.positions, mea.main_axes[0])) * mea.main_axes[0]]
+    center_x = (min_x + max_x) / 2.
+    min_y, max_y = [np.min(np.dot(mea.positions, mea.main_axes[1])) * mea.main_axes[1],
+                    np.max(np.dot(mea.positions, mea.main_axes[1])) * mea.main_axes[1]]
+    center_y = (min_y + max_y) / 2.
 
-        shank_coord = np.array([x_shank, y_shank, z_shank])
-        shank_coord_rot = np.dot(M, shank_coord)
+    probe_height = 200
+    probe_top = max_y + probe_height * mea.main_axes[1]
+    probe_bottom = min_y - probe_height * mea.main_axes[1]
+    probe_corner = min_y - 0.1 * probe_height * mea.main_axes[1]
+    probe_left = min_x - 0.1 * probe_height * mea.main_axes[0]
+    probe_right = max_x + 0.1 * probe_height * mea.main_axes[0]
 
-        r = Poly3DCollection([np.transpose(shank_coord_rot)])
-        # r.set_facecolor('green')
-        alpha = (0.3,)
-        mea_col = mpl_colors.to_rgb('g') + alpha
-        edge_col = mpl_colors.to_rgb('k') + alpha
-        r.set_edgecolor(edge_col)
-        r.set_facecolor(mea_col)
-        ax.add_collection3d(r)
+
+    verts = np.array([
+        min_x - 2 * mea.size * mea.main_axes[0] + probe_top,  # left, bottom
+        min_x - 2 * mea.size * mea.main_axes[0] + probe_corner,  # left, top
+        center_x - probe_bottom,  # right, top
+        max_x + 2 * mea.size * mea.main_axes[0] + probe_corner,  # right, bottom
+        max_x + 2 * mea.size * mea.main_axes[0] + probe_top,
+    ])
+
+    raise Exception()
+
+    r = Poly3DCollection([verts])
+    # r.set_facecolor('green')
+    alpha = (0.3,)
+    mea_col = mpl_colors.to_rgb('g') + alpha
+    edge_col = mpl_colors.to_rgb('k') + alpha
+    r.set_edgecolor(edge_col)
+    r.set_facecolor(mea_col)
+    ax.add_collection3d(r)
 
 
     if xlim:
@@ -179,7 +190,7 @@ def plot_probe_3d(mea_pos, rot_axis, theta, pos=[0, 0, 0], shape='square', alpha
     if zlim:
         ax.set_zlim(zlim)
 
-    return rot_pos
+    # return rot_pos
 
 
 def plot_cylinder_3d(bottom, direction, length, radius, color='k', alpha=.5, ax=None,
@@ -220,65 +231,46 @@ def plot_cylinder_3d(bottom, direction, length, radius, color='k', alpha=.5, ax=
 
     return ax
 
+def make_3d_ellipse_patch(size, axis_1, axis_2, position, ax, facecolor='orange', edgecolor=None, alpha=1):
+    '''
+
+    Parameters
+    ----------
+    size
+    axis_1
+    axis_2
+    position
+    ax
+    facecolor
+    edgecolor
+    alpha
+
+    Returns
+    -------
+
+    '''
+    p = patches.Circle((0, 0), size, facecolor=facecolor, alpha=alpha)
+    ax.add_patch(p)
+
+    path = p.get_path()  # Get the path and the associated transform
+    trans = p.get_patch_transform()
+    #
+    path = trans.transform_path(path)  # Apply the transform
 
 
-def _make_patch_3d(pathpatch, rot_axis, angle, z=0):
-    """
-    Transforms a 2D Patch to a 3D patch using the given normal vector.
+    p.__class__ = art3d.PathPatch3D  # Change the class
+    p._code3d = path.codes  # Copy the codes
+    p._facecolor3d = p.get_facecolor  # Get the face color
 
-    The patch is projected into they XY plane, rotated about the origin
-    and finally translated by z.
-    """
-    path = pathpatch.get_path() #Get the path and the associated transform
-    trans = pathpatch.get_patch_transform()
+    verts = path.vertices  # Get the vertices in 2D
 
-    path = trans.transform_path(path) #Apply the transform
+    M = [axis_1, axis_2, np.cross(axis_1, axis_2)]  # Get the rotation matrix
 
-    pathpatch.__class__ = art3d.PathPatch3D #Change the class
-    pathpatch._code3d = path.codes #Copy the codes
-    pathpatch._facecolor3d = pathpatch.get_facecolor #Get the face color
+    p._segment3d = np.array([np.dot(M, (x, y, 0)) for x, y in verts])
+    p._segment3d += position
 
-    verts = path.vertices #Get the vertices in 2D
+    return p
 
-    M = rotation_matrix(rot_axis, angle) #Get the rotation matrix
-
-    pathpatch._segment3d = np.array([np.dot(M, (x, y, 0)) + (0, 0, z) for x, y in verts])
-
-def _pathpatch_2d_to_3d(pathpatch, z = 0, normal = 'z'):
-    """
-    Transforms a 2D Patch to a 3D patch using the given normal vector.
-
-    The patch is projected into they XY plane, rotated about the origin
-    and finally translated by z.
-    """
-    if type(normal) is str: #Translate strings to normal vectors
-        index = "xyz".index(normal)
-        normal = np.roll((1.0,0,0), index)
-
-    normal /= np.linalg.norm(normal) #Make sure the vector is normalised
-
-    path = pathpatch.get_path() #Get the path and the associated transform
-    trans = pathpatch.get_patch_transform()
-
-    path = trans.transform_path(path) #Apply the transform
-
-    pathpatch.__class__ = art3d.PathPatch3D #Change the class
-    pathpatch._code3d = path.codes #Copy the codes
-    pathpatch._facecolor3d = pathpatch.get_facecolor #Get the face color
-
-    verts = path.vertices #Get the vertices in 2D
-
-    d = np.cross(normal, (0, 0, 1)) #Obtain the rotation vector
-    M = rotation_matrix(d) #Get the rotation matrix
-
-    pathpatch._segment3d = np.array([np.dot(M, (x, y, 0)) + (0, 0, z) for x, y in verts])
-
-
-def _pathpatch_translate(pathpatch, delta):
-    """
-    Translates the 3D pathpatch by the amount delta.
-    """
-    pathpatch._segment3d += delta
 
 def _cylinder(pos_start, direction, length, radius, n_points, flatten_along_zaxis=False):
     '''
