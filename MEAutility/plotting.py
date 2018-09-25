@@ -30,56 +30,60 @@ def plot_probe(mea, ax=None, xlim=None, ylim=None):
 
     n_elec = mea.positions.shape[0]
     elec_size = mea.size
-    mea_pos = np.array([np.dot(mea.positions, mea.main_axes[0]), np.dot(mea.positions, mea.main_axes[1])]).T
 
-    min_x, max_x = [np.min(np.dot(mea.positions, mea.main_axes[0])),
-                    np.max(np.dot(mea.positions, mea.main_axes[0]))]
-    center_x = (min_x + max_x)/2.
-    min_y, max_y = [np.min(np.dot(mea.positions, mea.main_axes[1])),
-                    np.max(np.dot(mea.positions, mea.main_axes[1]))]
-    center_y = (min_y + max_y)/2.
+    if mea.type == 'mea':
+        mea_pos = np.array([np.dot(mea.positions, mea.main_axes[0]), np.dot(mea.positions, mea.main_axes[1])]).T
 
-    probe_height = 200
-    probe_top = max_y + probe_height
-    probe_bottom = min_y - probe_height
-    probe_corner = min_y - 0.1*probe_height
-    probe_left = min_x - 0.1*probe_height
-    probe_right = max_x + 0.1*probe_height
-    
-    verts = [
-        (min_x - 2*elec_size, probe_top),  # left, bottom
-        (min_x - 2*elec_size, probe_corner),  # left, top
-        (center_x, probe_bottom),  # right, top
-        (max_x + 2*elec_size, probe_corner),  # right, bottom
-        (max_x + 2*elec_size, probe_top),
-        (min_x - 2 * elec_size, max_y + 2 * elec_size) # ignored
-    ]
+        min_x, max_x = [np.min(np.dot(mea.positions, mea.main_axes[0])),
+                        np.max(np.dot(mea.positions, mea.main_axes[0]))]
+        center_x = (min_x + max_x)/2.
+        min_y, max_y = [np.min(np.dot(mea.positions, mea.main_axes[1])),
+                        np.max(np.dot(mea.positions, mea.main_axes[1]))]
+        center_y = (min_y + max_y)/2.
 
-    codes = [Path.MOVETO,
-             Path.LINETO,
-             Path.LINETO,
-             Path.LINETO,
-             Path.LINETO,
-             Path.CLOSEPOLY,
-             ]
+        probe_height = 200
+        probe_top = max_y + probe_height
+        probe_bottom = min_y - probe_height
+        probe_corner = min_y - 0.1*probe_height
+        probe_left = min_x - 0.1*probe_height
+        probe_right = max_x + 0.1*probe_height
 
-    path = Path(verts, codes)
+        verts = [
+            (min_x - 2*elec_size, probe_top),  # left, bottom
+            (min_x - 2*elec_size, probe_corner),  # left, top
+            (center_x, probe_bottom),  # right, top
+            (max_x + 2*elec_size, probe_corner),  # right, bottom
+            (max_x + 2*elec_size, probe_top),
+            (min_x - 2 * elec_size, max_y + 2 * elec_size) # ignored
+        ]
 
-    patch = patches.PathPatch(path, facecolor='green', edgecolor='k', lw=0.5, alpha=0.3)
-    ax.add_patch(patch)
+        codes = [Path.MOVETO,
+                 Path.LINETO,
+                 Path.LINETO,
+                 Path.LINETO,
+                 Path.LINETO,
+                 Path.CLOSEPOLY,
+                 ]
 
-    if mea.shape == 'square':
-        for e in range(n_elec):
-            elec = patches.Rectangle((mea_pos[e, 0] - elec_size, mea_pos[e, 1] - elec_size), 2*elec_size,  2*elec_size,
-                                     alpha=0.7, facecolor='orange', edgecolor=[0.3, 0.3, 0.3], lw=0.5)
+        path = Path(verts, codes)
 
-            ax.add_patch(elec)
-    elif mea.shape == 'circle':
-        for e in range(n_elec):
-            elec = patches.Circle((mea_pos[e, 0], mea_pos[e, 1]), elec_size,
-                                     alpha=0.7, facecolor='orange', edgecolor=[0.3, 0.3, 0.3], lw=0.5)
+        patch = patches.PathPatch(path, facecolor='green', edgecolor='k', lw=0.5, alpha=0.3)
+        ax.add_patch(patch)
 
-            ax.add_patch(elec)
+        if mea.shape == 'square':
+            for e in range(n_elec):
+                elec = patches.Rectangle((mea_pos[e, 0] - elec_size, mea_pos[e, 1] - elec_size), 2*elec_size,  2*elec_size,
+                                         alpha=0.7, facecolor='orange', edgecolor=[0.3, 0.3, 0.3], lw=0.5)
+
+                ax.add_patch(elec)
+        elif mea.shape == 'circle':
+            for e in range(n_elec):
+                elec = patches.Circle((mea_pos[e, 0], mea_pos[e, 1]), elec_size,
+                                         alpha=0.7, facecolor='orange', edgecolor=[0.3, 0.3, 0.3], lw=0.5)
+
+                ax.add_patch(elec)
+    else:
+        raise NotImplementedError('Wire type plotting not implemented')
 
     ax.set_xlim(probe_left - 5*elec_size, probe_right + 5*elec_size)
     ax.set_ylim(probe_bottom - 5*elec_size, probe_top + 5*elec_size)
@@ -120,88 +124,89 @@ def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1, projection='3d')
 
-    elec_list = []
+    if mea.type == 'mea':
+        elec_list = []
+        if mea.shape == 'square':
+            for pos in mea.positions:
+                elec = np.array([pos - mea.size * mea.main_axes[0] - mea.size * mea.main_axes[1],
+                                 pos - mea.size * mea.main_axes[0] + mea.size * mea.main_axes[1],
+                                 pos + mea.size * mea.main_axes[0] + mea.size * mea.main_axes[1],
+                                 pos + mea.size * mea.main_axes[0] - mea.size * mea.main_axes[1]])
 
-    if mea.shape == 'square':
-        for pos in mea.positions:
-                # elec = patches.Rectangle((mea_pos[e, 0] - elec_size, mea_pos[e, 1] - elec_size), 2 * elec_size,
-                #                          2 * elec_size,
-                #                          alpha=0.7, facecolor='orange', edgecolor=[0.3, 0.3, 0.3], lw=0.5)
-            elec = np.array([pos - mea.size * mea.main_axes[0] - mea.size * mea.main_axes[1],
-                             pos - mea.size * mea.main_axes[0] + mea.size * mea.main_axes[1],
-                             pos + mea.size * mea.main_axes[0] + mea.size * mea.main_axes[1],
-                             pos + mea.size * mea.main_axes[0] - mea.size * mea.main_axes[1]])
+                elec_list.append(elec)
 
-            elec_list.append(elec)
+            el = Poly3DCollection(elec_list)
+            alpha = (0.7,)
+            el_col = mpl_colors.to_rgb('orange') + alpha
+            el.set_facecolor(el_col)
+            ax.add_collection3d(el)
+        elif mea.shape == 'circle':
+            for pos in mea.positions:
+                p = make_3d_ellipse_patch(mea.size, mea.main_axes[0], mea.main_axes[1],
+                                      pos, ax, facecolor='orange', edgecolor=None, alpha=0.7)
 
-        el = Poly3DCollection(elec_list)
-        alpha = (0.7,)
-        el_col = mpl_colors.to_rgb('orange') + alpha
-        el.set_facecolor(el_col)
-        ax.add_collection3d(el)
-    elif mea.shape == 'circle':
-        for pos in mea.positions:
-            p = make_3d_ellipse_patch(mea.size, mea.main_axes[0], mea.main_axes[1],
-                                  pos, ax, facecolor='orange', edgecolor=None, alpha=0.7)
+        min_dim_1 = np.min(np.dot(mea.positions, mea.main_axes[0]))
+        min_dim_2 = np.min(np.dot(mea.positions, mea.main_axes[1]))
+        max_dim_1 = np.max(np.dot(mea.positions, mea.main_axes[0]))
+        max_dim_2 = np.max(np.dot(mea.positions, mea.main_axes[1]))
 
-    min_x, max_x = [np.min(np.dot(mea.positions, mea.main_axes[0])) * mea.main_axes[0],
-                    np.max(np.dot(mea.positions, mea.main_axes[0])) * mea.main_axes[0]]
-    center_x = (min_x + max_x) / 2.
-    min_y, max_y = [np.min(np.dot(mea.positions, mea.main_axes[1])) * mea.main_axes[1],
-                    np.max(np.dot(mea.positions, mea.main_axes[1])) * mea.main_axes[1]]
-    center_y = (min_y + max_y) / 2.
+        center_probe = mea.positions.mean(axis=0)
+        center_dim_1 = np.dot(center_probe, mea.main_axes[0])
+        center_dim_2 = np.dot(center_probe, mea.main_axes[1])
 
-    if type == 'shank':
-        probe_height = 200
-        probe_top = max_y + probe_height * mea.main_axes[1]
-        probe_bottom = min_y - probe_height * mea.main_axes[1]
-        probe_corner = min_y - 0.1 * probe_height * mea.main_axes[1]
-        probe_left = min_x - 0.1 * probe_height * mea.main_axes[0]
-        probe_right = max_x + 0.1 * probe_height * mea.main_axes[0]
+        minmin, maxmax = [2*np.min([min_dim_1 + center_dim_1, min_dim_2 + center_dim_2]),
+                          2*np.max([max_dim_1 +  center_dim_1, max_dim_2 + center_dim_2])]
 
-        verts = np.array([
-            min_x - 2 * mea.size * mea.main_axes[0] + probe_top,  # left, bottom
-            min_x - 2 * mea.size * mea.main_axes[0] + probe_corner,  # left, top
-            center_x + probe_bottom,  # right, top
-            max_x + 2 * mea.size * mea.main_axes[0] + probe_corner,  # right, bottom
-            max_x + 2 * mea.size * mea.main_axes[0] + probe_top,
-        ])
-    elif type == 'planar':
-        verts = np.array([
-            min_x - 2 * mea.size * mea.main_axes[0] + max_y + 2 * mea.size * mea.main_axes[1],  # left, bottom
-            min_x - 2 * mea.size * mea.main_axes[0] + (min_y - 2 * mea.size * mea.main_axes[1]),
-            max_x + 2 * mea.size * mea.main_axes[0] + (min_y - 2 * mea.size * mea.main_axes[1]),
-            max_x + 2 * mea.size * mea.main_axes[0] + max_y + 2 * mea.size * mea.main_axes[1],
-        ])
+        if type == 'shank':
+            probe_height = 200
+            probe_top = (max_dim_2 + probe_height) * mea.main_axes[1]
+            probe_bottom = (min_dim_1 - probe_height) * mea.main_axes[1]
+            probe_corner = (min_dim_2 - 0.1 * probe_height) * mea.main_axes[1]
+            probe_left = (min_dim_1 - 0.1 * probe_height) * mea.main_axes[0]
+            probe_right = (max_dim_1 + 0.1 * probe_height) * mea.main_axes[0]
 
-    r = Poly3DCollection([verts])
-    # r.set_facecolor('green')
-    alpha = (0.3,)
-    mea_col = mpl_colors.to_rgb('g') + alpha
-    edge_col = mpl_colors.to_rgb('k') + alpha
-    r.set_edgecolor(edge_col)
-    r.set_facecolor(mea_col)
-    ax.add_collection3d(r)
+            verts = np.array([
+                (min_dim_1 - 2 * mea.size) * mea.main_axes[0] + probe_top,  # left, bottom
+                (min_dim_1 - 2 * mea.size) * mea.main_axes[0] + probe_corner,  # left, top
+                probe_bottom,  # right, top
+                (max_dim_1 + 2 * mea.size) * mea.main_axes[0] + probe_corner,  # right, bottom
+                (max_dim_1 + 2 * mea.size) * mea.main_axes[0] + probe_top,
+            ])
+        elif type == 'planar':
+            verts = np.array([
+                (min_dim_1 - 3 * mea.size) * mea.main_axes[0] + (max_dim_2 + 3 * mea.size) * mea.main_axes[1],  # left, bottom
+                (min_dim_1 - 3 * mea.size) * mea.main_axes[0] + (min_dim_2 - 3 * mea.size) * mea.main_axes[1],
+                (max_dim_1 + 3 * mea.size) * mea.main_axes[0] + (min_dim_2 - 3 * mea.size) * mea.main_axes[1],
+                (max_dim_1 + 3 * mea.size) * mea.main_axes[0] + (max_dim_2 + 3 * mea.size) * mea.main_axes[1],
+            ])
+
+        verts += center_probe
+        r = Poly3DCollection([verts])
+        alpha = (0.3,)
+        mea_col = mpl_colors.to_rgb('g') + alpha
+        edge_col = mpl_colors.to_rgb('k') + alpha
+        r.set_edgecolor(edge_col)
+        r.set_facecolor(mea_col)
+        ax.add_collection3d(r)
 
 
-    if xlim is not None:
-        ax.set_xlim(xlim)
+        if xlim is not None:
+            ax.set_xlim(xlim)
+        else:
+            ax.set_xlim([minmin, maxmax] + center_probe[0])
+        if ylim is not None:
+            ax.set_ylim(ylim)
+        else:
+            ax.set_ylim([minmin, maxmax] + center_probe[1])
+        if zlim is not None:
+            ax.set_zlim(zlim)
+        else:
+            ax.set_zlim([minmin, maxmax] + center_probe[2])
     else:
-        xlim = [np.min(mea.positions[:,0]), np.max(mea.positions[:,0])]
-        print(xlim)
-        ax.set_xlim(xlim)
-    if ylim is not None:
-        ax.set_ylim(ylim)
-    else:
-        ylim = [np.min(mea.positions[:, 1]), np.max(mea.positions[:, 1])]
-        ax.set_ylim(ylim)
-    if zlim is not None:
-        ax.set_zlim(zlim)
-    else:
-        zlim = [np.min(mea.positions[:, 2]), np.max(mea.positions[:, 2])]
-        ax.set_zlim(zlim)
+        raise NotImplementedError('Wire type plotting not implemented')
 
     return ax
+
 
 # # TODO 3d surf plot
 # def plot_v_plane(mea, plane, offset=100):
@@ -399,6 +404,210 @@ def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1
 #                       zdir='z',
 #                       offset=-0.0001,
 #                       cmap=cm.coolwarm)
+
+
+def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, spacing=None,
+                       scalebar=False, time=None, dt=None, vscale=None):
+    '''
+
+    Parameters
+    ----------
+    signals
+    mea_pos
+    mea_pitch
+    color
+    points
+    lw
+
+    Returns
+    -------
+
+    '''
+    if ax is None:
+        fig = plt.figure()
+        ax = fig.add_subplot(1,1,1, frameon=False)
+        no_tight = False
+    else:
+        no_tight = True
+
+    mea_pos = np.array([np.dot(mea.positions, mea.main_axes[0]), np.dot(mea.positions, mea.main_axes[1])]).T
+    mea_pitch = [np.max(np.diff(mea_pos[:,0])), np.max(np.diff(mea_pos[:,1]))]
+    print(mea_pitch)
+
+    if spacing is None:
+        spacing = 0.1*np.max(mea_pitch)
+
+    # normalize to min peak
+    if vscale is None:
+        signalmin = 1.5*   np.max(np.abs(signals))
+        spike_norm = signals / signalmin * mea_pitch[1]
+    else:
+        spike_norm = signals / vscale * mea_pitch[1]
+
+    if colors is None:
+        if len(signals.shape) > 2:
+            colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+        else:
+            colors='k'
+
+    number_electrode = mea.number_electrode
+    for el in range(number_electrode):
+        if len(signals.shape) == 3:  # multiple
+            if points:
+                for sp_i, sp in enumerate(spike_norm):
+                    if len(colors) >= len(spike_norm) and len(colors) > 1:
+                        print(colors[sp_i])
+                        ax.plot(np.linspace(0, mea_pitch[0]-spacing, signals.shape[2]) + mea_pos[el, 0],
+                                np.transpose(sp[el, :]) +  mea_pos[el, 1], linestyle='-', marker='o', ms=2, lw=lw,
+                                color=colors[np.mod(sp_i, len(colors))],
+                                label='EAP '+ str(sp_i+1))
+                    elif len(colors) == 1:
+                        ax.plot(np.linspace(0, mea_pitch[0] - spacing, signals.shape[2]) + mea_pos[el, 0],
+                                np.transpose(sp[el, :]) +
+                                mea_pos[el, 1], linestyle='-', marker='o', ms=2, lw=lw, color=colors,
+                                label='EAP ' + str(sp_i + 1))
+            else:
+                for sp_i, sp in enumerate(spike_norm):
+                    if len(colors) > 1:
+                        ax.plot(np.linspace(0, mea_pitch[0]-spacing, signals.shape[2]) + mea_pos[el, 0],
+                                np.transpose(sp[el, :]) + mea_pos[el, 1], lw=lw, color=colors[np.mod(sp_i, len(colors))],
+                                label='EAP '+str(sp_i+1))
+                    elif len(colors) == 1:
+                        ax.plot(np.linspace(0, mea_pitch[0] - spacing, signals.shape[2]) + mea_pos[el, 1],
+                                np.transpose(sp[el, :]) + mea_pos[el, 1], lw=lw, color=colors,
+                                label='EAP ' + str(sp_i + 1))
+
+        else:
+            if points:
+                ax.plot(np.linspace(0, mea_pitch[0]-spacing, signals.shape[1]) + mea_pos[el, 0], spike_norm[el, :]
+                        + mea_pos[el, 1], color=colors, linestyle='-', marker='o', ms=2, lw=lw)
+            else:
+                ax.plot(np.linspace(0, mea_pitch[0]-spacing, signals.shape[1]) + mea_pos[el, 0], spike_norm[el, :] +
+                        mea_pos[el, 1], color=colors, lw=lw)
+
+        # ax.set_ylim([np.min(signals), np.max(signals)])
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.axis('off')
+
+    if scalebar:
+        if dt is None and time is None:
+            raise AttributeError('Pass either dt or time in the argument')
+        else:
+            shift = 0.1*spacing
+            pos_h = [np.min(mea_pos[:, 1]), np.min(mea_pos[:, 2]) - 1.5*mea_pitch[1]]
+            if vscale is None:
+                length_h = mea_pitch[1] * signalmin / (signalmin // 10 * 10)
+            else:
+                length_h = mea_pitch[1]
+            pos_w = [np.min(mea_pos[:, 1]), np.min(mea_pos[:, 2]) - 1.5*mea_pitch[1]]
+            length_w = mea_pitch[0]/5.
+
+            ax.plot([pos_h[0], pos_h[0]], [pos_h[1], pos_h[1] + length_h], color='k', lw=2)
+            if vscale is None:
+                ax.text(pos_h[0]+shift, pos_h[1] + length_h / 2., str(int(signalmin // 10 * 10)) + ' $\mu$V')
+            else:
+                ax.text(pos_h[0]+shift, pos_h[1] + length_h / 2., str(int(vscale)) + ' $\mu$V')
+            ax.plot([pos_w[0], pos_w[0]+length_w], [pos_w[1], pos_w[1]], color='k', lw=2)
+            ax.text(pos_w[0]+shift, pos_w[1]-length_h/3., str(time/5) + ' ms')
+
+    if not no_tight:
+        fig.tight_layout()
+
+    return ax
+
+
+def play_mea_recording(rec, mea, fs, window=1, step=0.1, colors=None, lw=1, ax=None, fig=None, spacing=None,
+                       scalebar=False, time=None, dt=None, vscale=None, spikes=None, repeat=False, interval=10):
+    '''
+
+    Parameters
+    ----------
+    rec
+    mea
+    fs
+    window
+    step
+    colors
+    lw
+    ax
+    fig
+    spacing
+    scalebar
+    time
+    dt
+    vscale
+    spikes
+    repeat
+    interval
+
+    Returns
+    -------
+
+    '''
+    n_window = int(fs * window)
+    n_step = int(fs * step)
+    start = np.arange(0, rec.shape[1], n_step)
+
+    if fig is None:
+        fig = plt.figure()
+    if ax is None:
+        ax = fig.add_subplot(1, 1, 1, frameon=False)
+        no_tight = False
+    else:
+        no_tight = True
+
+    if spacing is None:
+        spacing = 0.1 * np.max(mea_pitch)
+
+    # normalize to min peak
+    if vscale is None:
+        LFPmin = 1.5 * np.max(np.abs(rec))
+        rec_norm = rec / LFPmin * mea_pitch[1]
+    else:
+        rec_norm = rec / float(vscale) * mea_pitch[1]
+
+    if colors is None:
+        if len(rec.shape) > 2:
+            colors = plt.rcParams['axes.color_cycle']
+        else:
+            colors = 'k'
+
+    number_electrode = mea_pos.shape[0]
+    lines = []
+    for el in range(number_electrode):
+        if len(rec.shape) == 3:  # multiple
+            raise Exception('Dimensions should be Nchannels x Nsamples')
+        else:
+            line, = ax.plot(np.linspace(0, mea_pitch[0] - spacing, n_window) + mea_pos[el, 1],
+                            np.zeros(n_window) + mea_pos[el, 2], color=colors, lw=lw)
+            lines.append(line)
+
+    text = ax.text(0.7, 0, 'Time: ',
+                   color='k', fontsize=15, transform=ax.transAxes)
+
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.axis('off')
+
+    def update(i):
+        if n_window + i < rec.shape[1]:
+            for el in range(number_electrode):
+                lines[el].set_ydata(rec_norm[el, i:n_window + i] + mea_pos[el, 2])
+        else:
+            for el in range(number_electrode):
+                lines[el].set_ydata(np.pad(rec_norm[el, i:],
+                                           (0, n_window - (rec.shape[1] - i)), 'constant') + mea_pos[el, 2])
+
+        text.set_text('Time: ' + str(round(i / float(fs), 1)) + ' s')
+
+        return tuple(lines) + (text,)
+
+    anim = animation.FuncAnimation(fig, update, start, interval=interval, blit=True, repeat=False)
+    fig.tight_layout()
+
+    return anim
+
 
 
 def plot_cylinder_3d(bottom, direction, length, radius, color='k', alpha=.5, ax=None,

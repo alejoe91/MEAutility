@@ -244,6 +244,11 @@ class MEA(object):
         else:
             self.size = 5
 
+        if 'type' in info.keys():
+            self.type = info['type']
+        else:
+            self.type = 'mea'
+
         if self.plane == 'xy':
             self.main_axes = np.array([[1,0,0],[0,1,0]])
         elif self.plane == 'yz':
@@ -395,11 +400,14 @@ class MEA(object):
         -------
 
         '''
-        if not isinstance(current_values, (list, np.ndarray)) or \
-                len(current_values) != self.number_electrode:
-            raise Exception("Number of currents should be equal to number of electrodes %d" % self.number_electrode)
-        for i, el in enumerate(self.electrodes):
-            el.current = current_values[i]
+        if isinstance(current_values, (list, np.ndarray)):
+            if len(current_values) != self.number_electrode:
+                raise Exception("Number of currents should be equal to number of electrodes %d" % self.number_electrode)
+            else:
+                for i, el in enumerate(self.electrodes):
+                    el.current = current_values[i]
+        else:
+            raise Exception("Current values should be a list or np.array with len=%d" % self.number_electrode)
 
 
     def set_current(self, el_id, current_value):
