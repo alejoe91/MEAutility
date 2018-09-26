@@ -14,6 +14,8 @@ import numpy as np
 from numpy import linalg as la
 import os.path
 import copy
+import yaml
+import shutil
 
 class Electrode:
     def __init__(self, position=None, normal=None, current=None, sigma=None, max_field=None, shape=None, size=None):
@@ -198,7 +200,7 @@ class Electrode:
 class MEA(object):
     '''This class handles properties and stimulation of general multi-electrode arrays
     '''
-    def __init__(self, positions, info, normal=None, points_per_electrode=None, model=None, sigma=None):
+    def __init__(self, positions, info, normal=None, points_per_electrode=None, sigma=None):
         '''
 
         Parameters
@@ -249,6 +251,13 @@ class MEA(object):
         else:
             self.type = 'mea'
 
+        if 'model' in info.keys():
+            self.model = info['model']
+        else:
+            self.model = 'semi'
+
+        print("Model is set to %s" % self.model)
+
         if self.plane == 'xy':
             self.main_axes = np.array([[1,0,0],[0,1,0]])
         elif self.plane == 'yz':
@@ -258,15 +267,7 @@ class MEA(object):
 
         self.electrodes = [Electrode(pos, normal=self.normal, sigma=self.sigma, shape=self.shape,
                                      size=self.size) for pos in positions]
-        self.number_electrode = len(self.electrodes)
-        if model is not None:
-            if model == 'inf' or model=='semi':
-                self.model = model
-            else:
-                raise AttributeError("Unknown model. Model can be 'inf' or 'semi'")
-        else:
-            self.model = 'inf'
-            print("Setting model to 'inf'")
+        self.number_electrodes = len(self.electrodes)
 
         self._positions = None
         self.info = info
@@ -285,15 +286,15 @@ class MEA(object):
     @currents.setter
     def currents(self, current_values):
         if not isinstance(current_values, (list, np.ndarray)) or \
-                len(current_values) != self.number_electrode:
-            raise Exception("Number of currents should be equal to number of electrodes %d" % self.number_electrode)
+                len(current_values) != self.number_electrodes:
+            raise Exception("Number of currents should be equal to number of electrodes %d" % self.number_electrodes)
         for i, el in enumerate(self.electrodes):
             el.current = current_values[i]
 
     # override [] method
     def __getitem__(self, index):
         # return row of current matrix
-        if index < self.number_electrode:
+        if index < self.number_electrodes:
             return self.electrodes[index]
         else:
             print("Index out of bound")
@@ -339,18 +340,18 @@ class MEA(object):
         '''
         c = self.electrodes[0].current
         if isinstance(c, (float, int)):
-            currents = np.zeros(self.number_electrode)
+            currents = np.zeros(self.number_electrodes)
             for i, el in enumerate(self.electrodes):
                 currents[i] = el.current
         elif isinstance(c, (list, np.ndarray)):
-            currents = np.zeros((self.number_electrode, len(c)))
+            currents = np.zeros((self.number_electrodes, len(c)))
             for i, el in enumerate(self.electrodes):
                 currents[i] = el.current
         return currents
 
 
     def _get_electrode_positions(self):
-        pos = np.zeros((self.number_electrode, 3))
+        pos = np.zeros((self.number_electrodes, 3))
         for i, el in enumerate(self.electrodes):
             pos[i, :] = el.position
         return pos
@@ -368,7 +369,7 @@ class MEA(object):
 
         '''
         self.electrodes = electrodes
-        self.number_electrode = len(electrodes)
+        self.number_electrodes = len(electrodes)
 
 
     def set_random_currents(self, amp=None):
@@ -383,9 +384,9 @@ class MEA(object):
 
         '''
         if amp:
-            currents = np.random.randn(self.number_electrode) * amp
+            currents = np.random.randn(self.number_electrodes) * amp
         else:
-            currents = np.random.randn(self.number_electrode) * 10
+            currents = np.random.randn(self.number_electrodes) * 10
         self.currents = currents
 
 
@@ -401,13 +402,13 @@ class MEA(object):
 
         '''
         if isinstance(current_values, (list, np.ndarray)):
-            if len(current_values) != self.number_electrode:
-                raise Exception("Number of currents should be equal to number of electrodes %d" % self.number_electrode)
+            if len(current_values) != self.number_electrodes:
+                raise Exception("Number of currents should be equal to number of electrodes %d" % self.number_electrodes)
             else:
                 for i, el in enumerate(self.electrodes):
                     el.current = current_values[i]
         else:
-            raise Exception("Current values should be a list or np.array with len=%d" % self.number_electrode)
+            raise Exception("Current values should be a list or np.array with len=%d" % self.number_electrodes)
 
 
     def set_current(self, el_id, current_value):
@@ -444,9 +445,9 @@ class MEA(object):
 
         '''
         if amp is None:
-            currents = np.zeros(self.number_electrode)
+            currents = np.zeros(self.number_electrodes)
         else:
-            currents = amp*np.ones(self.number_electrode)
+            currents = amp*np.ones(self.number_electrodes)
         self.currents = currents
 
 
@@ -470,7 +471,7 @@ class MEA(object):
                 if isinstance(c, (float, int)):
                     vp = 0
                     stim_points = []
-                    for ii in range(self.number_electrode):
+                    for ii in range(self.number_electrodes):
                         vs, sp = self.electrodes[ii].field_contribution(points, npoints=self.points_per_electrode,
                                                                         model=self.model, main_axes=self.main_axes)
                         vp += vs
@@ -478,7 +479,7 @@ class MEA(object):
                 elif isinstance(c, (list, np.ndarray)):
                     vp = np.zeros(len(c))
                     stim_points = []
-                    for ii in range(self.number_electrode):
+                    for ii in range(self.number_electrodes):
                         vs, sp = self.electrodes[ii].field_contribution(points, npoints=self.points_per_electrode,
                                                                         model=self.model, main_axes=self.main_axes)
                         vp += vs
@@ -495,7 +496,7 @@ class MEA(object):
                         pf = 0
                         stim_points = []
                         cur_point = points[pp]
-                        for ii in range(self.number_electrode):
+                        for ii in range(self.number_electrodes):
                             # print("Computing electrode: ", ii + 1)
                             vs, sp = self.electrodes[ii].field_contribution(cur_point, npoints=self.points_per_electrode,
                                                                          model=self.model, main_axes=self.main_axes)
@@ -510,7 +511,7 @@ class MEA(object):
                         pf = np.zeros(len(c))
                         stim_points = []
                         cur_point = points[pp]
-                        for ii in range(self.number_electrode):
+                        for ii in range(self.number_electrodes):
                             # print("Computing electrode: ", ii + 1)
                             vs, sp = self.electrodes[ii].field_contribution(cur_point, npoints=self.points_per_electrode,
                                                                          model=self.model, main_axes=self.main_axes)
@@ -535,7 +536,7 @@ class MEA(object):
     def load_currents(self, filename):
         if os.path.isfile(filename):
             currente = np.load(filename)
-            if len(currents) != self.number_electrode:
+            if len(currents) != self.number_electrodes:
                 print('Error: number of currents in file different than number of electrodes')
             else:
                 print('Currents loaded successfully from file ', filename)
@@ -628,7 +629,7 @@ class RectMEA(MEA):
             return None
 
     def get_electrodes_number(self):
-        return self.number_electrode
+        return self.number_electrodes
 
     def get_current_matrix(self):
         current_matrix = np.zeros(self.dim)
@@ -645,7 +646,7 @@ class RectMEA(MEA):
         return electrode_matrix
 
     def set_current_matrix(self, currents):
-        current_array = np.zeros((self.number_electrode))
+        current_array = np.zeros((self.number_electrodes))
         for yy in range(self.dim):
             for zz in range(self.dim):
                 current_array[self.dim * yy + zz] = currents[zz, yy]
@@ -921,7 +922,6 @@ def return_mea(electrode_name=None, info=None):
     -------
 
     '''
-    import yaml
     if electrode_name is None and info is None:
         this_dir, this_filename = os.path.split(__file__)
         electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
@@ -978,8 +978,6 @@ def return_mea_info(electrode_name=None):
     -------
 
     '''
-    import yaml
-
     if electrode_name is None:
         this_dir, this_filename = os.path.split(__file__)
         electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
@@ -1015,9 +1013,6 @@ def add_mea(mea_yaml_path):
     -------
 
     '''
-    import yaml
-    import shutil
-
     path = os.path.abspath(mea_yaml_path)
 
     if path.endswith('.yaml') or path.endswith('.yml') and os.path.isfile(path):

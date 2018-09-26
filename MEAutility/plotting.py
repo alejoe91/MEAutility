@@ -313,7 +313,7 @@ def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1
 #
 #     verts = []
 #     elec_size = 5
-#     for e in range(mea.number_electrode):
+#     for e in range(mea.number_electrodes):
 #         yy = [mea.electrodes[e].position[1] - elec_size,
 #               mea.electrodes[e].position[1] - elec_size,
 #               mea.electrodes[e].position[1] + elec_size,
@@ -373,8 +373,8 @@ def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1
 #     ax0.view_init(elev=elev, azim=azim)
 #     ax0.dist = 10..
 #     # plot data points.
-#     # ax0.scatter([mea.electrodes[elec].position[1] for elec in range(0, mea.number_electrode)],
-#     #             [mea.electrodes[elec].position[2] for elec in range(0, mea.number_electrode)],
+#     # ax0.scatter([mea.electrodes[elec].position[1] for elec in range(0, mea.number_electrodes)],
+#     #             [mea.electrodes[elec].position[2] for elec in range(0, mea.number_electrodes)],
 #     #             marker='o', c='b', s=50, zorder=2)
 #     ax0.set_xlabel('y ($\mu$m)', fontsize=20)
 #     ax0.set_ylabel('z ($\mu$m)', fontsize=20)
@@ -450,8 +450,8 @@ def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, s
         else:
             colors='k'
 
-    number_electrode = mea.number_electrode
-    for el in range(number_electrode):
+    number_electrodes = mea.number_electrodes
+    for el in range(number_electrodes):
         if len(signals.shape) == 3:  # multiple
             if points:
                 for sp_i, sp in enumerate(spike_norm):
@@ -573,9 +573,9 @@ def play_mea_recording(rec, mea, fs, window=1, step=0.1, colors=None, lw=1, ax=N
         else:
             colors = 'k'
 
-    number_electrode = mea_pos.shape[0]
+    number_electrodes = mea.number_electrodes
     lines = []
-    for el in range(number_electrode):
+    for el in range(number_electrodes):
         if len(rec.shape) == 3:  # multiple
             raise Exception('Dimensions should be Nchannels x Nsamples')
         else:
@@ -592,10 +592,10 @@ def play_mea_recording(rec, mea, fs, window=1, step=0.1, colors=None, lw=1, ax=N
 
     def update(i):
         if n_window + i < rec.shape[1]:
-            for el in range(number_electrode):
+            for el in range(number_electrodes):
                 lines[el].set_ydata(rec_norm[el, i:n_window + i] + mea_pos[el, 2])
         else:
-            for el in range(number_electrode):
+            for el in range(number_electrodes):
                 lines[el].set_ydata(np.pad(rec_norm[el, i:],
                                            (0, n_window - (rec.shape[1] - i)), 'constant') + mea_pos[el, 2])
 
