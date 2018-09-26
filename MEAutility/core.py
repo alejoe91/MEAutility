@@ -63,7 +63,7 @@ class Electrode:
             self.size = 5
 
 
-    def field_contribution(self, pos, npoints=1, model='inf', main_axes=None):
+    def field_contribution(self, pos, npoints=1, model='inf', main_axes=None, seed=None):
         '''
 
         Parameters
@@ -77,8 +77,10 @@ class Electrode:
         -------
 
         '''
+        if seed is not None:
+            np.random.seed(seed)
+        potential, stim_points = [], []
         if isinstance(self.current, (float, int)):
-            # print("Current is int or float")
             if self.current != 0:
                 if npoints == 1:
                     stim_points = self.position
@@ -93,6 +95,7 @@ class Electrode:
                         potentiel = self.max_field
                 else:
                     stim_points = []
+                    spl = 0
                     for p in range(npoints):
                         # print(p)
                         placed = False
@@ -113,16 +116,19 @@ class Electrode:
                         else:
                             while not placed:
                                 arr = (2 * self.size) * np.random.rand(3) - self.size
-                                point = np.cross(arr, self.normal) + self.position
+                                M = np.array([main_axes[0], main_axes[1], self.normal])
+                                arr_rot = np.dot(M.T, arr)
+                                point = np.cross(arr_rot, self.normal)
                                 if np.linalg.norm(point - self.position) < self.size:
                                     # print(point)
                                     placed = True
-                                    stim_points.append(point)
+                                    stim_points.append(point + self.position)
 
                     stim_points = np.array(stim_points)
                     split_current = float(self.current) / npoints
+                    potential = 0
                     for el_pos in stim_points:
-                        potential = 0
+                        spl += split_current
                         if any(pos != el_pos):
                             if model == 'inf':
                                 potential += split_current / (4 * np.pi * self.sigma * la.norm(pos - el_pos))
@@ -194,7 +200,7 @@ class Electrode:
                 else:
                     potential[i] = 0
                     stim_points = np.zeros((npoints, 3))
-            return potential, stim_points
+        return potential, stim_points
 
 
 class MEA(object):
@@ -210,6 +216,7 @@ class MEA(object):
         model
         sigma
         '''
+        self.number_electrodes = len(positions)
         if sigma == None:
             self.sigma = 0.3
         else:
@@ -219,17 +226,6 @@ class MEA(object):
             self.points_per_electrode = 1
         else:
             self.points_per_electrode = int(points_per_electrode)
-
-        # Assumption (electrodes on the same plane)
-        if normal is None:
-            self.normal = np.cross(positions[0], positions[1])
-            self.normal /= np.linalg.norm(self.normal)
-        else:
-            if isinstance(normal, (list, np.ndarray)):
-                self.normal = normal
-            else:
-                self.normal = np.cross(positions[0], positions[1])
-                self.normal /= np.linalg.norm(self.normal)
 
         if 'shape' in info.keys():
             self.shape = info['shape']
@@ -255,6 +251,27 @@ class MEA(object):
             self.model = info['model']
         else:
             self.model = 'semi'
+
+        if self.plane == 'xy':
+            self.main_axes = np.array([[1,0,0],[0,1,0]])
+        elif self.plane == 'yz':
+            self.main_axes = np.array([[0,1,0],[0,0,1]])
+        elif self.plane == 'xz':
+            self.main_axes = np.array([[1,0,0],[0,0,1]])
+
+        # Assumption (electrodes on the same plane)
+        if self.number_electrodes > 1:
+            if normal is None:
+                self.normal = np.cross(positions[0], positions[1])
+                self.normal /= np.linalg.norm(self.normal)
+            else:
+                if isinstance(normal, (list, np.ndarray)):
+                    self.normal = normal
+                else:
+                    self.normal = np.cross(positions[0], positions[1])
+                    self.normal /= np.linalg.norm(self.normal)
+        else:
+            self.normal = np.cross(self.main_axes[0], self.main_axes[1])
 
         print("Model is set to %s" % self.model)
 
@@ -451,18 +468,24 @@ class MEA(object):
         self.currents = currents
 
 
-    def compute_field(self, points, return_stim_points=False):
+    def compute_field(self, points, return_stim_points=False, seed=None):
         '''
 
         Parameters
         ----------
         points
+        return_stim_points
+        seed
 
         Returns
         -------
 
         '''
         c = self.electrodes[0].current
+
+        if isinstance(points, list):
+            points = np.array(points)
+
         if points.ndim == 1:
             if len(points) != 3:
                 print("Error: expected 3d point")
@@ -473,7 +496,9 @@ class MEA(object):
                     stim_points = []
                     for ii in range(self.number_electrodes):
                         vs, sp = self.electrodes[ii].field_contribution(points, npoints=self.points_per_electrode,
-                                                                        model=self.model, main_axes=self.main_axes)
+                                                                        model=self.model, main_axes=self.main_axes,
+                                                                        seed=seed)
+
                         vp += vs
                         stim_points.append(sp)
                 elif isinstance(c, (list, np.ndarray)):
@@ -481,7 +506,8 @@ class MEA(object):
                     stim_points = []
                     for ii in range(self.number_electrodes):
                         vs, sp = self.electrodes[ii].field_contribution(points, npoints=self.points_per_electrode,
-                                                                        model=self.model, main_axes=self.main_axes)
+                                                                        model=self.model, main_axes=self.main_axes,
+                                                                        seed=seed)
                         vp += vs
                         stim_points.append(sp)
         elif points.ndim == 2:
@@ -514,14 +540,14 @@ class MEA(object):
                         for ii in range(self.number_electrodes):
                             # print("Computing electrode: ", ii + 1)
                             vs, sp = self.electrodes[ii].field_contribution(cur_point, npoints=self.points_per_electrode,
-                                                                         model=self.model, main_axes=self.main_axes)
+                                                                            model=self.model, main_axes=self.main_axes,
+                                                                            seed=seed)
                             pf += vs
                             stim_points.append(sp)
                         vp[pp] = pf
         stim_points = np.array(stim_points)
         if len(stim_points.shape) == 3:
             stim_points = np.reshape(stim_points, (stim_points.shape[0]*stim_points.shape[1], stim_points.shape[2]))
-
         if return_stim_points:
             return vp, stim_points
         else:
@@ -708,103 +734,134 @@ def get_positions(elinfo):
     if 'pos' in elinfo.keys():
         pos = np.array(elinfo['pos'])
         nelec = pos.shape[0]
-        if pos.shape[1] == 2:
-            pos2d = pos
-            if 'plane' not in elinfo.keys():
-                print("'plane' field with 2D dimensions assumed to be 'yz")
-                plane = 'yz'
-            else:
-                plane = elinfo['plane']
-            if 'offset' not in elinfo.keys():
-                offset = 0
-            else:
-                offset = elinfo['offset']
-            pos = add_3dim(pos2d, plane, offset)
-        elif pos.shape[1] != 3:
-            raise AttributeError('pos attribute should be a list of 2D or 3D points')
+        if len(pos.shape) == 1:
+            if len(pos) == 2:
+                pos2d = np.array([pos])
+                if 'plane' not in elinfo.keys():
+                    print("'plane' field with 2D dimensions assumed to be 'yz")
+                    plane = 'yz'
+                else:
+                    plane = elinfo['plane']
+                if 'offset' not in elinfo.keys():
+                    offset = 0
+                else:
+                    offset = elinfo['offset']
+                pos = add_3dim(pos2d, plane, offset)
+            elif len(pos) == 3:
+                pos = np.array([pos])
+            elif len(pos) != 3:
+                raise AttributeError('pos attribute should be one or a list of 2D or 3D points')
+        elif len(pos.shape) == 2:
+            if pos.shape[1] == 2:
+                pos2d = pos
+                if 'plane' not in elinfo.keys():
+                    print("'plane' field with 2D dimensions assumed to be 'yz")
+                    plane = 'yz'
+                else:
+                    plane = elinfo['plane']
+                if 'offset' not in elinfo.keys():
+                    offset = 0
+                else:
+                    offset = elinfo['offset']
+                pos = add_3dim(pos2d, plane, offset)
+            elif pos.shape[1] != 3:
+                raise AttributeError('pos attribute should be a list of 2D or 3D points')
         electrode_pos = True
 
     # method 2: dim, pithch, stagger
     if 'dim' in elinfo.keys():
         dim = elinfo['dim']
-        if 'pitch' not in elinfo.keys():
-            raise AttributeError("When 'dim' is used, also 'pitch' should be specified.")
-        else:
-            pitch = elinfo['pitch']
-
-        if isinstance(dim, int):
-            dim = [dim, dim]
-        if isinstance(pitch, int) or isinstance(pitch, float):
-            pitch = [pitch, pitch]
-        if len(dim) == 2:
-            d1 = np.array([])
-            d2 = np.array([])
-            if 'stagger' in elinfo.keys():
-                stagger = elinfo['stagger']
+        if dim == 1:
+            if 'plane' not in elinfo.keys():
+                print("'plane' field with 2D dimensions assumed to be 'yz")
+                plane = 'yz'
             else:
-                stagger = None
-            for d_i in range(dim[1]):
-                if stagger is not None:
-                    if isinstance(stagger, int) or isinstance(stagger, float):
-                        if np.mod(d_i, 2):
-                            d1new = np.arange(dim[0]) * pitch[0] + stagger
+                plane = elinfo['plane']
+            if 'offset' not in elinfo.keys():
+                offset = 0
+            else:
+                offset = elinfo['offset']
+            pos2d = np.array([[0, 0]])
+            pos = add_3dim(pos2d, plane, offset)
+        else:
+            if 'pitch' not in elinfo.keys():
+                raise AttributeError("When 'dim' is used, also 'pitch' should be specified.")
+            else:
+                pitch = elinfo['pitch']
+
+            if isinstance(dim, int):
+                dim = [dim, dim]
+            if isinstance(pitch, int) or isinstance(pitch, float):
+                pitch = [pitch, pitch]
+            if len(dim) == 2:
+                d1 = np.array([])
+                d2 = np.array([])
+                if 'stagger' in elinfo.keys():
+                    stagger = elinfo['stagger']
+                else:
+                    stagger = None
+                for d_i in range(dim[1]):
+                    if stagger is not None:
+                        if isinstance(stagger, int) or isinstance(stagger, float):
+                            if np.mod(d_i, 2):
+                                d1new = np.arange(dim[0]) * pitch[0] + stagger
+                            else:
+                                d1new = np.arange(dim[0]) * pitch[0]
+                        elif len(stagger) == len(dim):
+                            d1new = np.arange(dim[0]) * pitch[0] + stagger[d_i]
                         else:
                             d1new = np.arange(dim[0]) * pitch[0]
-                    elif len(stagger) == len(dim):
-                        d1new = np.arange(dim[0]) * pitch[0] + stagger[d_i]
                     else:
                         d1new = np.arange(dim[0]) * pitch[0]
+                    d1 = np.concatenate((d1, d1new))
+                    d2 = np.concatenate((d2, dim[0] * [pitch[1] * d_i]))
+                pos2d = np.vstack((d2, d1)).T
+                if 'plane' not in elinfo.keys():
+                    print("'plane' field with 2D dimensions assumed to be 'yz")
+                    plane = 'yz'
                 else:
-                    d1new = np.arange(dim[0]) * pitch[0]
-                d1 = np.concatenate((d1, d1new))
-                d2 = np.concatenate((d2, dim[0] * [pitch[1] * d_i]))
-            pos2d = np.vstack((d2, d1)).T
-            if 'plane' not in elinfo.keys():
-                print("'plane' field with 2D dimensions assumed to be 'yz")
-                plane = 'yz'
-            else:
-                plane = elinfo['plane']
-            if 'offset' not in elinfo.keys():
-                offset = 0
-            else:
-                offset = elinfo['offset']
-            pos2d = np.concatenate((np.reshape(d2.T, (d1.size, 1)),
-                                    np.reshape(d1.T, (d2.size, 1))), axis=1)
-            pos = add_3dim(pos2d, plane, offset)
+                    plane = elinfo['plane']
+                if 'offset' not in elinfo.keys():
+                    offset = 0
+                else:
+                    offset = elinfo['offset']
+                pos2d = np.concatenate((np.reshape(d2.T, (d1.size, 1)),
+                                        np.reshape(d1.T, (d2.size, 1))), axis=1)
+                pos = add_3dim(pos2d, plane, offset)
 
-        elif len(dim) >= 3:
-            d1 = np.array([])
-            d2 = np.array([])
-            if 'stagger' in elinfo.keys():
-                stagger = elinfo['stagger']
-            else:
-                stagger = None
-            for d_i, d in enumerate(dim):
-                if stagger is not None:
-                    if isinstance(stagger, int) or isinstance(stagger, float):
-                        if np.mod(d_i, 2):
-                            d1new = np.arange(d) * pitch[0] + stagger
+            elif len(dim) >= 3:
+                d1 = np.array([])
+                d2 = np.array([])
+                if 'stagger' in elinfo.keys():
+                    stagger = elinfo['stagger']
+                else:
+                    stagger = None
+                for d_i, d in enumerate(dim):
+                    if stagger is not None:
+                        if isinstance(stagger, int) or isinstance(stagger, float):
+                            if np.mod(d_i, 2):
+                                d1new = np.arange(d) * pitch[0] + stagger
+                            else:
+                                d1new = np.arange(d) * pitch[0]
+                        elif len(stagger) == len(dim):
+                            d1new = np.arange(d) * pitch[0] + stagger[d_i]
                         else:
                             d1new = np.arange(d) * pitch[0]
-                    elif len(stagger) == len(dim):
-                        d1new = np.arange(d) * pitch[0] + stagger[d_i]
                     else:
                         d1new = np.arange(d) * pitch[0]
+                    d1 = np.concatenate((d1, d1new))
+                    d2 = np.concatenate((d2, d * [pitch[1] * d_i]))
+                pos2d = np.vstack((d2, d1)).T
+                if 'plane' not in elinfo.keys():
+                    print("'plane' field with 2D dimensions assumed to be 'yz")
+                    plane = 'yz'
                 else:
-                    d1new = np.arange(d) * pitch[0]
-                d1 = np.concatenate((d1, d1new))
-                d2 = np.concatenate((d2, d * [pitch[1] * d_i]))
-            pos2d = np.vstack((d2, d1)).T
-            if 'plane' not in elinfo.keys():
-                print("'plane' field with 2D dimensions assumed to be 'yz")
-                plane = 'yz'
-            else:
-                plane = elinfo['plane']
-            if 'offset' not in elinfo.keys():
-                offset = 0
-            else:
-                offset = elinfo['offset']
-            pos = add_3dim(pos2d, plane, offset)
+                    plane = elinfo['plane']
+                if 'offset' not in elinfo.keys():
+                    offset = 0
+                else:
+                    offset = elinfo['offset']
+                pos = add_3dim(pos2d, plane, offset)
         electrode_pos = True
 
     if electrode_pos:
@@ -833,83 +890,83 @@ def check_if_rect(elinfo):
         return False
 
 
-def get_elcoords(xoffset, dim, pitch, electrode_name, sortlist, size, plane=None, **kwargs):
-    '''Computes the positions of the elctrodes based on the elinfo
-
-    Parameters
-    ----------
-    elinfo: dict
-        Contains electrode information from yaml file (dim, pitch, sortlist, plane, pos)
-
-    Returns
-    -------
-    positions: np.array
-        3d points with the centers of the electrodes
-
-    '''
-    if 'neuronexus-32' in electrode_name.lower():
-        # calculate hexagonal order
-        coldims = [10,12,10]
-        if 'cut' in electrode_name.lower():
-            coldims = [10,10,10]
-        if sum(coldims)!=np.prod(dim):
-            raise ValueError('Dimensions in Neuronexus-32-channel probe do not match.')
-        zshift = -pitch[1]*(coldims[1]-1)/2.
-        x = np.array([0.]*sum(coldims))
-        y = np.concatenate([[-pitch[0]]*coldims[0],[0.]*coldims[1],[pitch[0]]*coldims[2]])
-        z = np.concatenate((np.arange(pitch[1]/2., coldims[0]*pitch[1],pitch[1]),
-                            np.arange(0.,coldims[1]*pitch[1], pitch[1]),
-                            np.arange(pitch[1]/2.,coldims[2]*pitch[1], pitch[1])))+zshift
-    elif 'tetrode' in electrode_name.lower():
-        if plane is not None:
-            if plane == 'xy':
-                x = np.array([-np.sqrt(2.)*size, 0, np.sqrt(2.)*radius, 0])
-                y = np.array([0, -np.sqrt(2.)*size, 0, np.sqrt(2.)*radius])
-                z = np.array([0, 0, 0, 0])
-            elif plane == 'yz':
-                y = np.array([-np.sqrt(2.)*size, 0, np.sqrt(2.)*radius, 0])
-                z = np.array([0, -np.sqrt(2.)*size, 0, np.sqrt(2.)*radius])
-                x = np.array([0, 0, 0, 0])
-            elif plane == 'xz':
-                x = np.array([-np.sqrt(2.)*size, 0, np.sqrt(2.)*radius, 0])
-                z = np.array([0, -np.sqrt(2.)*size, 0, np.sqrt(2.)*radius])
-                y = np.array([0, 0, 0, 0])
-        else:
-            x = np.array([-np.sqrt(2.)*size, 0, np.sqrt(2.)*radius, 0])
-            y = np.array([0, -np.sqrt(2.)*size, 0, np.sqrt(2.)*radius])
-            z = np.array([0, 0, 0, 0])
-    elif 'neuropixels' in electrode_name.lower():
-        if 'v1' in electrode_name.lower():
-            # checkerboard structure
-            x, y, z = np.mgrid[0:1,-(dim[0]-1)/2.:dim[0]/2.:1, -(dim[1]-1)/2.:dim[1]/2.:1]
-            x=x+xoffset
-            yoffset = np.array([pitch[0]/4.,-pitch[0]/4.]*(dim[1]/2))
-            y=np.add(y*pitch[0],yoffset) #y*pitch[0]
-            z=z*pitch[1]
-        elif 'v2' in electrode_name.lower():
-            # no checkerboard structure
-            x, y, z = np.mgrid[0:1,-(dim[0]-1)/2.:dim[0]/2.:1, -(dim[1]-1)/2.:dim[1]/2.:1]
-            x=x+xoffset
-            y=y*pitch[0]
-            z=z*pitch[1]
-        else:
-            raise NotImplementedError('This version of the NeuroPixels Probe is not implemented')
-    else:
-        x, y, z = np.mgrid[0:1,-(dim[0]-1)/2.:dim[0]/2.:1, -(dim[1]-1)/2.:dim[1]/2.:1]
-        x=x+xoffset
-        y=y*pitch[0]
-        z=z*pitch[1]
-
-    el_pos = np.concatenate((np.reshape(x,(x.size,1)),
-                             np.reshape(y,(y.size,1)),
-                             np.reshape(z,(z.size,1))), axis = 1)
-    # resort electrodes in case
-    el_pos_sorted = copy.deepcopy(el_pos)
-    if sortlist is not None:
-        for i,si in enumerate(sortlist):
-            el_pos_sorted[si] = el_pos[i]
-
-    return el_pos_sorted
+# def get_elcoords(xoffset, dim, pitch, electrode_name, sortlist, size, plane=None, **kwargs):
+#     '''Computes the positions of the elctrodes based on the elinfo
+#
+#     Parameters
+#     ----------
+#     elinfo: dict
+#         Contains electrode information from yaml file (dim, pitch, sortlist, plane, pos)
+#
+#     Returns
+#     -------
+#     positions: np.array
+#         3d points with the centers of the electrodes
+#
+#     '''
+#     if 'neuronexus-32' in electrode_name.lower():
+#         # calculate hexagonal order
+#         coldims = [10,12,10]
+#         if 'cut' in electrode_name.lower():
+#             coldims = [10,10,10]
+#         if sum(coldims)!=np.prod(dim):
+#             raise ValueError('Dimensions in Neuronexus-32-channel probe do not match.')
+#         zshift = -pitch[1]*(coldims[1]-1)/2.
+#         x = np.array([0.]*sum(coldims))
+#         y = np.concatenate([[-pitch[0]]*coldims[0],[0.]*coldims[1],[pitch[0]]*coldims[2]])
+#         z = np.concatenate((np.arange(pitch[1]/2., coldims[0]*pitch[1],pitch[1]),
+#                             np.arange(0.,coldims[1]*pitch[1], pitch[1]),
+#                             np.arange(pitch[1]/2.,coldims[2]*pitch[1], pitch[1])))+zshift
+#     elif 'tetrode' in electrode_name.lower():
+#         if plane is not None:
+#             if plane == 'xy':
+#                 x = np.array([-np.sqrt(2.)*size, 0, np.sqrt(2.)*radius, 0])
+#                 y = np.array([0, -np.sqrt(2.)*size, 0, np.sqrt(2.)*radius])
+#                 z = np.array([0, 0, 0, 0])
+#             elif plane == 'yz':
+#                 y = np.array([-np.sqrt(2.)*size, 0, np.sqrt(2.)*radius, 0])
+#                 z = np.array([0, -np.sqrt(2.)*size, 0, np.sqrt(2.)*radius])
+#                 x = np.array([0, 0, 0, 0])
+#             elif plane == 'xz':
+#                 x = np.array([-np.sqrt(2.)*size, 0, np.sqrt(2.)*radius, 0])
+#                 z = np.array([0, -np.sqrt(2.)*size, 0, np.sqrt(2.)*radius])
+#                 y = np.array([0, 0, 0, 0])
+#         else:
+#             x = np.array([-np.sqrt(2.)*size, 0, np.sqrt(2.)*radius, 0])
+#             y = np.array([0, -np.sqrt(2.)*size, 0, np.sqrt(2.)*radius])
+#             z = np.array([0, 0, 0, 0])
+#     elif 'neuropixels' in electrode_name.lower():
+#         if 'v1' in electrode_name.lower():
+#             # checkerboard structure
+#             x, y, z = np.mgrid[0:1,-(dim[0]-1)/2.:dim[0]/2.:1, -(dim[1]-1)/2.:dim[1]/2.:1]
+#             x=x+xoffset
+#             yoffset = np.array([pitch[0]/4.,-pitch[0]/4.]*(dim[1]/2))
+#             y=np.add(y*pitch[0],yoffset) #y*pitch[0]
+#             z=z*pitch[1]
+#         elif 'v2' in electrode_name.lower():
+#             # no checkerboard structure
+#             x, y, z = np.mgrid[0:1,-(dim[0]-1)/2.:dim[0]/2.:1, -(dim[1]-1)/2.:dim[1]/2.:1]
+#             x=x+xoffset
+#             y=y*pitch[0]
+#             z=z*pitch[1]
+#         else:
+#             raise NotImplementedError('This version of the NeuroPixels Probe is not implemented')
+#     else:
+#         x, y, z = np.mgrid[0:1,-(dim[0]-1)/2.:dim[0]/2.:1, -(dim[1]-1)/2.:dim[1]/2.:1]
+#         x=x+xoffset
+#         y=y*pitch[0]
+#         z=z*pitch[1]
+#
+#     el_pos = np.concatenate((np.reshape(x,(x.size,1)),
+#                              np.reshape(y,(y.size,1)),
+#                              np.reshape(z,(z.size,1))), axis = 1)
+#     # resort electrodes in case
+#     el_pos_sorted = copy.deepcopy(el_pos)
+#     if sortlist is not None:
+#         for i,si in enumerate(sortlist):
+#             el_pos_sorted[si] = el_pos[i]
+#
+#     return el_pos_sorted
 
 def return_mea(electrode_name=None, info=None):
     '''
@@ -1019,9 +1076,13 @@ def add_mea(mea_yaml_path):
         with open(path, 'r') as meafile:
             elinfo = yaml.load(meafile)
             if 'pos' not in elinfo.keys():
-                if 'dim' not in elinfo.keys() or 'pitch' not in elinfo.keys():
+                if 'dim' in elinfo.keys():
+                    if elinfo['dim'] != 1 and 'pitch' not in elinfo.keys():
+                        raise AttributeError("The yaml file should contin either a list of 3d or 2d positions 'pos' or "
+                                             "intormation about dimension and pitch ('dim' and 'pitch')")
+                else:
                     raise AttributeError("The yaml file should contin either a list of 3d or 2d positions 'pos' or "
-                                         "intormation about dimension and pitch ('dim' and 'pitch')")
+                                         "intormation about dimension and pitch ('dim' and 'pitch') - unless dim=1")
 
         this_dir, this_filename = os.path.split(__file__)
         shutil.copy(path, os.path.join(this_dir, 'electrodes'))

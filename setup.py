@@ -9,17 +9,16 @@ install_requires = []
 
 setup(
     name="MEAutility",
-    version="1.0",
+    version="1.0.1",
     author="Alessio Buccino",
-    author_email="alesisob@ifi.uio.no",
+    author_email="alessiob@ifi.uio.no",
     description="Python package for multi-electrode array (MEA) handling and stimulation.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/pypa/sampleproject",
+    url="https://github.com/alejoe91/MEAutility",
     classifiers=[
-        "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)  ",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(),
