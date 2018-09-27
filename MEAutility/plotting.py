@@ -5,8 +5,15 @@ from .core import MEA, RectMEA, rotation_matrix
 import matplotlib
 import pylab as plt
 
+import matplotlib.patches as patches
+from matplotlib.path import Path
+from matplotlib.collections import PatchCollection
+from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d import art3d
+from matplotlib import colors as mpl_colors
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
-def plot_probe(mea, ax=None, xlim=None, ylim=None):
+def plot_probe(mea, ax=None, xlim=None, ylim=None, color_currents=False, cmap='viridis'):
     '''
     
     Parameters
@@ -20,9 +27,7 @@ def plot_probe(mea, ax=None, xlim=None, ylim=None):
     -------
 
     '''
-    import matplotlib.patches as patches
-    from matplotlib.path import Path
-    from matplotlib.collections import PatchCollection
+
 
     if ax is None:
         fig = plt.figure()
@@ -70,16 +75,23 @@ def plot_probe(mea, ax=None, xlim=None, ylim=None):
         patch = patches.PathPatch(path, facecolor='green', edgecolor='k', lw=0.5, alpha=0.3)
         ax.add_patch(patch)
 
+        if color_currents:
+            norm_curr = mea.currents / np.max(np.abs(mea.currents))
+            colormap = plt.get_cmap(cmap)
+            elec_colors = colormap(norm_curr)
+        else:
+            elec_colors = ['orange'] * mea.number_electrodes
+
         if mea.shape == 'square':
             for e in range(n_elec):
                 elec = patches.Rectangle((mea_pos[e, 0] - elec_size, mea_pos[e, 1] - elec_size), 2*elec_size,  2*elec_size,
-                                         alpha=0.7, facecolor='orange', edgecolor=[0.3, 0.3, 0.3], lw=0.5)
+                                         alpha=0.7, facecolor=elec_colors[e], edgecolor=[0.3, 0.3, 0.3], lw=0.5)
 
                 ax.add_patch(elec)
         elif mea.shape == 'circle':
             for e in range(n_elec):
                 elec = patches.Circle((mea_pos[e, 0], mea_pos[e, 1]), elec_size,
-                                         alpha=0.7, facecolor='orange', edgecolor=[0.3, 0.3, 0.3], lw=0.5)
+                                         alpha=0.7, facecolor=elec_colors[e], edgecolor=[0.3, 0.3, 0.3], lw=0.5)
 
                 ax.add_patch(elec)
     else:
@@ -97,7 +109,8 @@ def plot_probe(mea, ax=None, xlim=None, ylim=None):
     return ax
 
 
-def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1000, type='shank'):
+def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1000, type='shank',
+                  color_currents=False, cmap='viridis'):
     '''
 
     Parameters
@@ -119,10 +132,18 @@ def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1
     from mpl_toolkits.mplot3d import art3d
     from matplotlib import colors as mpl_colors
     from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+    from matplotlib import patches
 
     if ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1, projection='3d')
+
+    if color_currents:
+        norm_curr = mea.currents / np.max(np.abs(mea.currents))
+        colormap = plt.get_cmap(cmap)
+        elec_colors = colormap(norm_curr)
+    else:
+        elec_colors = ['orange'] * mea.number_electrodes
 
     if mea.type == 'mea':
         elec_list = []
@@ -132,18 +153,13 @@ def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1
                                  pos - mea.size * mea.main_axes[0] + mea.size * mea.main_axes[1],
                                  pos + mea.size * mea.main_axes[0] + mea.size * mea.main_axes[1],
                                  pos + mea.size * mea.main_axes[0] - mea.size * mea.main_axes[1]])
-
                 elec_list.append(elec)
-
-            el = Poly3DCollection(elec_list)
-            alpha = (0.7,)
-            el_col = mpl_colors.to_rgb('orange') + alpha
-            el.set_facecolor(el_col)
+            el = Poly3DCollection(elec_list, alpha=0.8, color=elec_colors)
             ax.add_collection3d(el)
         elif mea.shape == 'circle':
-            for pos in mea.positions:
+            for i, pos in enumerate(mea.positions):
                 p = make_3d_ellipse_patch(mea.size, mea.main_axes[0], mea.main_axes[1],
-                                      pos, ax, facecolor='orange', edgecolor=None, alpha=0.7)
+                                      pos, ax, facecolor=elec_colors[i], edgecolor=None, alpha=0.7)
 
         min_dim_1 = np.min(np.dot(mea.positions, mea.main_axes[0]))
         min_dim_2 = np.min(np.dot(mea.positions, mea.main_axes[1]))
@@ -685,10 +701,6 @@ def make_3d_ellipse_patch(size, axis_1, axis_2, position, ax, facecolor='orange'
 
     verts_3d = np.array([(x, y, 0) for x, y in verts])
     verts_3d_rot = np.array([np.dot(M, (x, y, 0)) for x, y in verts])
-
-    print(verts_3d)
-    print(verts_3d_rot)
-    print(M)
 
     p._segment3d = np.array([np.dot(M.T, (x, y, 0)) for x, y in verts])
     p._segment3d += position

@@ -356,12 +356,12 @@ class MEA(object):
 
         '''
         c = self.electrodes[0].current
-        if isinstance(c, (float, int)):
-            currents = np.zeros(self.number_electrodes)
+        if isinstance(c, (list, np.ndarray)):
+            currents = np.zeros((self.number_electrodes, len(c)))
             for i, el in enumerate(self.electrodes):
                 currents[i] = el.current
-        elif isinstance(c, (list, np.ndarray)):
-            currents = np.zeros((self.number_electrodes, len(c)))
+        else:
+            currents = np.zeros(self.number_electrodes)
             for i, el in enumerate(self.electrodes):
                 currents[i] = el.current
         return currents
@@ -889,84 +889,6 @@ def check_if_rect(elinfo):
                 return True
         return False
 
-
-# def get_elcoords(xoffset, dim, pitch, electrode_name, sortlist, size, plane=None, **kwargs):
-#     '''Computes the positions of the elctrodes based on the elinfo
-#
-#     Parameters
-#     ----------
-#     elinfo: dict
-#         Contains electrode information from yaml file (dim, pitch, sortlist, plane, pos)
-#
-#     Returns
-#     -------
-#     positions: np.array
-#         3d points with the centers of the electrodes
-#
-#     '''
-#     if 'neuronexus-32' in electrode_name.lower():
-#         # calculate hexagonal order
-#         coldims = [10,12,10]
-#         if 'cut' in electrode_name.lower():
-#             coldims = [10,10,10]
-#         if sum(coldims)!=np.prod(dim):
-#             raise ValueError('Dimensions in Neuronexus-32-channel probe do not match.')
-#         zshift = -pitch[1]*(coldims[1]-1)/2.
-#         x = np.array([0.]*sum(coldims))
-#         y = np.concatenate([[-pitch[0]]*coldims[0],[0.]*coldims[1],[pitch[0]]*coldims[2]])
-#         z = np.concatenate((np.arange(pitch[1]/2., coldims[0]*pitch[1],pitch[1]),
-#                             np.arange(0.,coldims[1]*pitch[1], pitch[1]),
-#                             np.arange(pitch[1]/2.,coldims[2]*pitch[1], pitch[1])))+zshift
-#     elif 'tetrode' in electrode_name.lower():
-#         if plane is not None:
-#             if plane == 'xy':
-#                 x = np.array([-np.sqrt(2.)*size, 0, np.sqrt(2.)*radius, 0])
-#                 y = np.array([0, -np.sqrt(2.)*size, 0, np.sqrt(2.)*radius])
-#                 z = np.array([0, 0, 0, 0])
-#             elif plane == 'yz':
-#                 y = np.array([-np.sqrt(2.)*size, 0, np.sqrt(2.)*radius, 0])
-#                 z = np.array([0, -np.sqrt(2.)*size, 0, np.sqrt(2.)*radius])
-#                 x = np.array([0, 0, 0, 0])
-#             elif plane == 'xz':
-#                 x = np.array([-np.sqrt(2.)*size, 0, np.sqrt(2.)*radius, 0])
-#                 z = np.array([0, -np.sqrt(2.)*size, 0, np.sqrt(2.)*radius])
-#                 y = np.array([0, 0, 0, 0])
-#         else:
-#             x = np.array([-np.sqrt(2.)*size, 0, np.sqrt(2.)*radius, 0])
-#             y = np.array([0, -np.sqrt(2.)*size, 0, np.sqrt(2.)*radius])
-#             z = np.array([0, 0, 0, 0])
-#     elif 'neuropixels' in electrode_name.lower():
-#         if 'v1' in electrode_name.lower():
-#             # checkerboard structure
-#             x, y, z = np.mgrid[0:1,-(dim[0]-1)/2.:dim[0]/2.:1, -(dim[1]-1)/2.:dim[1]/2.:1]
-#             x=x+xoffset
-#             yoffset = np.array([pitch[0]/4.,-pitch[0]/4.]*(dim[1]/2))
-#             y=np.add(y*pitch[0],yoffset) #y*pitch[0]
-#             z=z*pitch[1]
-#         elif 'v2' in electrode_name.lower():
-#             # no checkerboard structure
-#             x, y, z = np.mgrid[0:1,-(dim[0]-1)/2.:dim[0]/2.:1, -(dim[1]-1)/2.:dim[1]/2.:1]
-#             x=x+xoffset
-#             y=y*pitch[0]
-#             z=z*pitch[1]
-#         else:
-#             raise NotImplementedError('This version of the NeuroPixels Probe is not implemented')
-#     else:
-#         x, y, z = np.mgrid[0:1,-(dim[0]-1)/2.:dim[0]/2.:1, -(dim[1]-1)/2.:dim[1]/2.:1]
-#         x=x+xoffset
-#         y=y*pitch[0]
-#         z=z*pitch[1]
-#
-#     el_pos = np.concatenate((np.reshape(x,(x.size,1)),
-#                              np.reshape(y,(y.size,1)),
-#                              np.reshape(z,(z.size,1))), axis = 1)
-#     # resort electrodes in case
-#     el_pos_sorted = copy.deepcopy(el_pos)
-#     if sortlist is not None:
-#         for i,si in enumerate(sortlist):
-#             el_pos_sorted[si] = el_pos[i]
-#
-#     return el_pos_sorted
 
 def return_mea(electrode_name=None, info=None):
     '''
