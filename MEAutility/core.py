@@ -345,7 +345,7 @@ class MEA(object):
 
         '''
         for i, el in enumerate(self.electrodes):
-            el.set_normal(normal/np.linalg.norm(normal))
+            el.normal = normal/np.linalg.norm(normal)
 
 
     def _get_currents(self):
