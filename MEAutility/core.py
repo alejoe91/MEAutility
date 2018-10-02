@@ -273,7 +273,7 @@ class MEA(object):
         else:
             self.normal = np.cross(self.main_axes[0], self.main_axes[1])
 
-        print("Model is set to %s" % self.model)
+        # print("Model is set to %s" % self.model)
 
         if self.plane == 'xy':
             self.main_axes = np.array([[1,0,0],[0,1,0]])
@@ -780,7 +780,7 @@ def get_positions(elinfo):
             if len(pos) == 2:
                 pos2d = np.array([pos])
                 if 'plane' not in elinfo.keys():
-                    print("'plane' field with 2D dimensions assumed to be 'yz")
+                    # print("'plane' field with 2D dimensions assumed to be 'yz")
                     plane = 'yz'
                 else:
                     plane = elinfo['plane']
@@ -797,7 +797,7 @@ def get_positions(elinfo):
             if pos.shape[1] == 2:
                 pos2d = pos
                 if 'plane' not in elinfo.keys():
-                    print("'plane' field with 2D dimensions assumed to be 'yz")
+                    # print("'plane' field with 2D dimensions assumed to be 'yz")
                     plane = 'yz'
                 else:
                     plane = elinfo['plane']
@@ -815,7 +815,7 @@ def get_positions(elinfo):
         dim = elinfo['dim']
         if dim == 1:
             if 'plane' not in elinfo.keys():
-                print("'plane' field with 2D dimensions assumed to be 'yz")
+                # print("'plane' field with 2D dimensions assumed to be 'yz")
                 plane = 'yz'
             else:
                 plane = elinfo['plane']
@@ -859,7 +859,7 @@ def get_positions(elinfo):
                     d2 = np.concatenate((d2, dim[0] * [pitch[1] * d_i]))
                 pos2d = np.vstack((d2, d1)).T
                 if 'plane' not in elinfo.keys():
-                    print("'plane' field with 2D dimensions assumed to be 'yz")
+                    # print("'plane' field with 2D dimensions assumed to be 'yz")
                     plane = 'yz'
                 else:
                     plane = elinfo['plane']
@@ -895,7 +895,7 @@ def get_positions(elinfo):
                     d2 = np.concatenate((d2, d * [pitch[1] * d_i]))
                 pos2d = np.vstack((d2, d1)).T
                 if 'plane' not in elinfo.keys():
-                    print("'plane' field with 2D dimensions assumed to be 'yz")
+                    # print("'plane' field with 2D dimensions assumed to be 'yz")
                     plane = 'yz'
                 else:
                     plane = elinfo['plane']

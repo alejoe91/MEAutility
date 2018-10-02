@@ -13,7 +13,7 @@ from mpl_toolkits.mplot3d import art3d
 from matplotlib import colors as mpl_colors
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
-def plot_probe(mea, ax=None, xlim=None, ylim=None, color_currents=False, cmap='viridis'):
+def plot_probe(mea, ax=None, xlim=None, ylim=None, color_currents=False, cmap='viridis', type='shank'):
     '''
     
     Parameters
@@ -46,29 +46,53 @@ def plot_probe(mea, ax=None, xlim=None, ylim=None, color_currents=False, cmap='v
                         np.max(np.dot(mea.positions, mea.main_axes[1]))]
         center_y = (min_y + max_y)/2.
 
-        probe_height = 200
-        probe_top = max_y + probe_height
-        probe_bottom = min_y - probe_height
-        probe_corner = min_y - 0.1*probe_height
-        probe_left = min_x - 0.1*probe_height
-        probe_right = max_x + 0.1*probe_height
+        if type == 'shank':
+            probe_height = 200
+            probe_top = max_y + probe_height
+            probe_bottom = min_y - probe_height
+            probe_corner = min_y - 0.1*probe_height
+            probe_left = min_x - 0.1*probe_height
+            probe_right = max_x + 0.1*probe_height
 
-        verts = [
-            (min_x - 2*elec_size, probe_top),  # left, bottom
-            (min_x - 2*elec_size, probe_corner),  # left, top
-            (center_x, probe_bottom),  # right, top
-            (max_x + 2*elec_size, probe_corner),  # right, bottom
-            (max_x + 2*elec_size, probe_top),
-            (min_x - 2 * elec_size, max_y + 2 * elec_size) # ignored
-        ]
+            verts = [
+                (min_x - 2*elec_size, probe_top),  # left, bottom
+                (min_x - 2*elec_size, probe_corner),  # left, top
+                (center_x, probe_bottom),  # right, top
+                (max_x + 2*elec_size, probe_corner),  # right, bottom
+                (max_x + 2*elec_size, probe_top),
+                (min_x - 2 * elec_size, max_y + 2 * elec_size) # ignored
+            ]
 
-        codes = [Path.MOVETO,
-                 Path.LINETO,
-                 Path.LINETO,
-                 Path.LINETO,
-                 Path.LINETO,
-                 Path.CLOSEPOLY,
-                 ]
+            codes = [Path.MOVETO,
+                     Path.LINETO,
+                     Path.LINETO,
+                     Path.LINETO,
+                     Path.LINETO,
+                     Path.CLOSEPOLY,
+                     ]
+
+        elif type == 'planar':
+            probe_top = max_y + 2 * elec_size
+            probe_bottom = min_y - 2 * elec_size
+            probe_left = min_x - 2 * elec_size
+            probe_right = max_x + 2 * elec_size
+
+            verts = [
+                (min_x - 2 * elec_size, max_y + 2 * elec_size),  # left, bottom
+                (min_x - 2 * elec_size, min_y - 2 * elec_size),  # left, top
+                (max_x + 2 * elec_size, min_y - 2 * elec_size),  # right, bottom
+                (max_x + 2 * elec_size, max_y + 2 * elec_size), # ignored
+                (max_x + 2 * elec_size, max_y + 2 * elec_size)  # ignored
+            ]
+
+            codes = [Path.MOVETO,
+                     Path.LINETO,
+                     Path.LINETO,
+                     Path.LINETO,
+                     Path.CLOSEPOLY,
+                     ]
+        else:
+            raise AttributeError("'type' can be 'shank' or 'planar'")
 
         path = Path(verts, codes)
 
@@ -97,14 +121,16 @@ def plot_probe(mea, ax=None, xlim=None, ylim=None, color_currents=False, cmap='v
     else:
         raise NotImplementedError('Wire type plotting not implemented')
 
-    ax.set_xlim(probe_left - 5*elec_size, probe_right + 5*elec_size)
-    ax.set_ylim(probe_bottom - 5*elec_size, probe_top + 5*elec_size)
     ax.axis('equal')
 
     if xlim:
         ax.set_xlim(xlim)
+    else:
+        ax.set_xlim(probe_left - 5 * elec_size, probe_right + 5 * elec_size)
     if ylim:
         ax.set_ylim(ylim)
+    else:
+        ax.set_ylim(probe_bottom - 5 * elec_size, probe_top + 5 * elec_size)
 
     return ax
 
