@@ -1,0 +1,8 @@
+electrode_name: tetrode
+sortlist: null
+pitch: 16
+dim: 2
+size: 7.0
+shape: square
+type: mea
+plane: yz

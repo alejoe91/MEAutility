@@ -355,11 +355,35 @@ class MEA(object):
         -------
 
         '''
-        c = self.electrodes[0].current
-        if isinstance(c, (list, np.ndarray)):
-            currents = np.zeros((self.number_electrodes, len(c)))
+        curr = [el.current for el in self.electrodes]
+        if np.all([isinstance(c, (list, np.ndarray)) for c in curr]):
+            curr_len = [len(el.current) for el in self.electrodes]
+            if len(np.unique(curr_len)) == 1:
+                tcurrent = np.unique(curr_len)[0]
+                currents = np.zeros((self.number_electrodes, tcurrent))
+                for i, el in enumerate(self.electrodes):
+                    currents[i] = el.current
+            else:
+                self.reset_currents()
+                print("Currents have different lengths! Currents has been resetted.")
+        elif np.any([isinstance(c, (list, np.ndarray)) for c in curr]):
+            # this deals with setting an array current accessing the electrode directly
+            # find length if current array
             for i, el in enumerate(self.electrodes):
-                currents[i] = el.current
+                if isinstance(el.current, (list, np.ndarray)):
+                    tcurrent = len(el.current)
+                    break
+                else:
+                    pass
+            currents = np.zeros((self.number_electrodes, tcurrent))
+            for i, el in enumerate(self.electrodes):
+                if isinstance(el.current, (list, np.ndarray)) and len(el.current) == tcurrent:
+                    currents[i] = el.current
+                elif isinstance(el.current, (list, np.ndarray)) and len(el.current) != tcurrent:
+                    currents[i] = [el.current[0]] * tcurrent
+                else:
+                    currents[i] = [el.current] * tcurrent
+            self.currents = currents
         else:
             currents = np.zeros(self.number_electrodes)
             for i, el in enumerate(self.electrodes):
@@ -442,8 +466,11 @@ class MEA(object):
             for el_i, el in enumerate(self.electrodes):
                 if el_i == el_id:
                     el.current = np.array(current_value)
-                else:
-                    el.current = np.array([el.current] * len(current_value))
+                elif isinstance(el.current, (float, int)):
+                        el.current = np.array([el.current] * len(current_value))
+                elif isinstance(el.current, (list, np.ndarray)):
+                    if len(el.current) != len(current_value):
+                        el.current = np.array([el.current[0]] * len(current_value))
 
 
 
@@ -497,7 +524,8 @@ class MEA(object):
                                                                         seed=seed)
 
                         vp += vs
-                        stim_points.append(sp)
+                        if len(sp) != 0:
+                            stim_points.append(sp)
                 elif isinstance(c, (list, np.ndarray)):
                     vp = np.zeros(len(c))
                     stim_points = []
@@ -506,7 +534,8 @@ class MEA(object):
                                                                         model=self.model, main_axes=self.main_axes,
                                                                         seed=seed)
                         vp += vs
-                        stim_points.append(sp)
+                        if len(sp) != 0:
+                            stim_points.append(sp)
         elif points.ndim == 2:
             if points.shape[1] != 3:
                 print("Error: expected 3d points")
@@ -525,7 +554,8 @@ class MEA(object):
                             vs, sp = self.electrodes[ii].field_contribution(cur_point, npoints=self.points_per_electrode,
                                                                          model=self.model, main_axes=self.main_axes)
                             pf += vs
-                            stim_points.append(sp)
+                            if len(sp) != 0:
+                                stim_points.append(sp)
                         vp[pp] = pf
                 elif isinstance(c, (list, np.ndarray)):
                     vp = np.zeros((points.shape[0], len(c)))
@@ -542,7 +572,8 @@ class MEA(object):
                                                                             model=self.model, main_axes=self.main_axes,
                                                                             seed=seed)
                             pf += vs
-                            stim_points.append(sp)
+                            if len(sp) != 0:
+                                stim_points.append(sp)
                         vp[pp] = pf
         stim_points = np.array(stim_points)
         if len(stim_points.shape) == 3:
@@ -639,9 +670,18 @@ class RectMEA(MEA):
         x_plane
         '''
         MEA.__init__(self, positions, info)
-        self.dim = info['dim']
+        if 'dim' in info.keys():
+            self.dim = info['dim']
+        else:
+            raise AttributeError("Rectangular MEA should have 'dim' field in info")
+        if 'pitch' in info.keys():
+            self.pitch = info['pitch']
+        else:
+            raise AttributeError("Rectangular MEA should have 'pitch' field in info")
         if isinstance(self.dim, int):
             self.dim = [self.dim, self.dim]
+        if isinstance(self.pitch, (int, float)):
+            self.pitch = [self.pitch, self.pitch]
 
     # override [] method
     def __getitem__(self, index):
@@ -653,8 +693,6 @@ class RectMEA(MEA):
             print("Index out of bound")
             return None
 
-    def get_electrodes_number(self):
-        return self.number_electrodes
 
     def get_current_matrix(self):
         current_matrix = np.zeros(self.dim)
@@ -663,6 +701,7 @@ class RectMEA(MEA):
                 current_matrix[i, j] = self.currents[self.dim[0] * j + i]
         return current_matrix
 
+
     def get_electrode_matrix(self):
         electrode_matrix = np.empty(self.dim, dtype=object)
         for i in np.arange(0, self.dim[0]):
@@ -670,12 +709,16 @@ class RectMEA(MEA):
                 electrode_matrix[i, j] = self.electrodes[self.dim[0] * j + i]
         return electrode_matrix
 
+
     def set_current_matrix(self, currents):
         current_array = np.zeros((self.number_electrodes))
-        for yy in np.arange(self.dim[0]):
-            for zz in np.arange(self.dim[1]):
-                current_array[self.dim[0] * yy + zz] = currents[zz, yy]
+        for i in np.arange(self.dim[0]):
+            for j in np.arange(self.dim[1]):
+                current_array[self.dim[0] * i + j] = currents[j, i]
         self.set_currents(current_values=current_array)
+
+    def get_linear_id(self, i, j):
+        return self.dim[0] * j + i
 
 
 def add_3dim(pos2d, plane, offset=None):
