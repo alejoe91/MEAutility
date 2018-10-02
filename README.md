@@ -4,8 +4,19 @@ Python package for multi-electrode array (MEA) handling and stimulation.
 
 ## Installation
 
-To install run `python setup.py install (or develop)`.
-The package can then importd in Python `import MEAutility as MEA`
+To install run:
+`pip install MEAutility`
+
+If you want to install from sources and be updated with the latest development you can install with:
+```
+git clone https://github.com/alejoe91/MEAutility
+cd MEAutility
+python setup.py install (or develop)
+```
+
+The package can then imported in Python with:
+
+`import MEAutility as MEA`
 
 ### Requirements
 - numpy
@@ -40,7 +51,7 @@ type: mea
 - `plane` (optional): plane in which the electrode is instantiated (if `pos` is not given). It can be `xy`, `yz` (default), or `xz`.
 - `model` (optional): modeling framework to compute stimulation potential. Either `inf` (infinite and conductive space), or `semi` (semi-infinite conductive space - the MEA is considered as an insulating plane).
 
-Check out the `notebooks/electrode_definitions.ipynb` for other examples on commonly used probes (e.g. Neuropixels).
+Check out the `notebooks/MEA_definitions.ipynb` for other examples on commonly used probes (e.g. Neuropixels).
 
 ### Adding and Removing MEA models
 
