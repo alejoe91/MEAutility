@@ -96,7 +96,7 @@ class Electrode:
                 else:
                     stim_points = []
                     spl = 0
-                    for p in range(npoints):
+                    for p in np.arange(npoints):
                         # print(p)
                         placed = False
                         if self.shape == 'square':
@@ -159,7 +159,7 @@ class Electrode:
                             potential = np.array([self.max_field] * len(self.current))
                     else:
                         stim_points = []
-                        for p in range(npoints):
+                        for p in np.arange(npoints):
                             # print(p)
                             placed = False
                             if self.shape == 'square':
@@ -389,7 +389,7 @@ class MEA(object):
         self.number_electrodes = len(electrodes)
 
 
-    def set_random_currents(self, amp=None):
+    def set_random_currents(self, mean=0, sd=1000):
         '''
 
         Parameters
@@ -400,10 +400,7 @@ class MEA(object):
         -------
 
         '''
-        if amp:
-            currents = np.random.randn(self.number_electrodes) * amp
-        else:
-            currents = np.random.randn(self.number_electrodes) * 10
+        currents = sd * np.random.randn(self.number_electrodes) + mean
         self.currents = currents
 
 
@@ -468,7 +465,7 @@ class MEA(object):
         self.currents = currents
 
 
-    def compute_field(self, points, return_stim_points=False, seed=None):
+    def compute_field(self, points, return_stim_points=False, seed=None, verbose=False):
         '''
 
         Parameters
@@ -494,7 +491,7 @@ class MEA(object):
                 if isinstance(c, (float, int)):
                     vp = 0
                     stim_points = []
-                    for ii in range(self.number_electrodes):
+                    for ii in np.arange(self.number_electrodes):
                         vs, sp = self.electrodes[ii].field_contribution(points, npoints=self.points_per_electrode,
                                                                         model=self.model, main_axes=self.main_axes,
                                                                         seed=seed)
@@ -504,7 +501,7 @@ class MEA(object):
                 elif isinstance(c, (list, np.ndarray)):
                     vp = np.zeros(len(c))
                     stim_points = []
-                    for ii in range(self.number_electrodes):
+                    for ii in np.arange(self.number_electrodes):
                         vs, sp = self.electrodes[ii].field_contribution(points, npoints=self.points_per_electrode,
                                                                         model=self.model, main_axes=self.main_axes,
                                                                         seed=seed)
@@ -518,11 +515,12 @@ class MEA(object):
                 if isinstance(c, (float, int)):
                     vp = np.zeros(points.shape[0])
                     for pp in np.arange(len(vp)):
-                        print("Computing point: ", pp+1)
+                        if verbose:
+                            print("Computing point: ", pp+1)
                         pf = 0
                         stim_points = []
                         cur_point = points[pp]
-                        for ii in range(self.number_electrodes):
+                        for ii in np.arange(self.number_electrodes):
                             # print("Computing electrode: ", ii + 1)
                             vs, sp = self.electrodes[ii].field_contribution(cur_point, npoints=self.points_per_electrode,
                                                                          model=self.model, main_axes=self.main_axes)
@@ -533,11 +531,12 @@ class MEA(object):
                     vp = np.zeros((points.shape[0], len(c)))
                     stim_points = []
                     for pp in np.arange(len(vp)):
-                        print("Computing point: ", pp+1)
+                        if verbose:
+                            print("Computing point: ", pp+1)
                         pf = np.zeros(len(c))
                         stim_points = []
                         cur_point = points[pp]
-                        for ii in range(self.number_electrodes):
+                        for ii in np.arange(self.number_electrodes):
                             # print("Computing electrode: ", ii + 1)
                             vs, sp = self.electrodes[ii].field_contribution(cur_point, npoints=self.points_per_electrode,
                                                                             model=self.model, main_axes=self.main_axes,
@@ -659,24 +658,24 @@ class RectMEA(MEA):
 
     def get_current_matrix(self):
         current_matrix = np.zeros(self.dim)
-        for i in range(0, self.dim[0]):
-            for j in range(0, self.dim[1]):
+        for i in np.arange(0, self.dim[0]):
+            for j in np.arange(0, self.dim[1]):
                 current_matrix[i, j] = self.currents[self.dim[0] * j + i]
         return current_matrix
 
     def get_electrode_matrix(self):
         electrode_matrix = np.empty(self.dim, dtype=object)
-        for i in range(0, self.dim[0]):
-            for j in range(0, self.dim[1]):
+        for i in np.arange(0, self.dim[0]):
+            for j in np.arange(0, self.dim[1]):
                 electrode_matrix[i, j] = self.electrodes[self.dim[0] * j + i]
         return electrode_matrix
 
     def set_current_matrix(self, currents):
         current_array = np.zeros((self.number_electrodes))
-        for yy in range(self.dim):
-            for zz in range(self.dim):
-                current_array[self.dim * yy + zz] = currents[zz, yy]
-        self.set_currents(currents=current_array)
+        for yy in np.arange(self.dim[0]):
+            for zz in np.arange(self.dim[1]):
+                current_array[self.dim[0] * yy + zz] = currents[zz, yy]
+        self.set_currents(current_values=current_array)
 
 
 def add_3dim(pos2d, plane, offset=None):
@@ -800,7 +799,7 @@ def get_positions(elinfo):
                     stagger = elinfo['stagger']
                 else:
                     stagger = None
-                for d_i in range(dim[1]):
+                for d_i in np.arange(dim[1]):
                     if stagger is not None:
                         if isinstance(stagger, int) or isinstance(stagger, float):
                             if np.mod(d_i, 2):
