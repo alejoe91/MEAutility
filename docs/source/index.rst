@@ -11,21 +11,21 @@ Python package for multi-electrode array (MEA) handling and stimulation.
 Installation
 ============
 
-To install run.::
-    ``pip install MEAutility``
+To install run:
+    pip install MEAutility
 
 If you want to install from sources and be updated with the latest development you can install with:
 
-    ```
+
     git clone https://github.com/alejoe91/MEAutility
     cd MEAutility
     python setup.py install (or develop)
-    ```
+    
 
 
 The package can then imported in Python with:
 
-    ``import MEAutility as MEA``
+    import MEAutility as MEA
 
 Requirements
 ============
@@ -33,6 +33,11 @@ Requirements
 - numpy
 - pyyaml
 - matplotlib
+
+Contact
+=======
+
+If you have questions or comments, contact Alessio Buccino: alessopb@ifi.uio.no
 
 .. toctree::
    :maxdepth: 2
