@@ -14,7 +14,7 @@ can be added and removed to and from the file system.
 List available MEAs:
 ~~~~~~~~~~~~~~~~~~~~
 
-.. code:: ipython3
+.. code-block:: python
 
     MEA.return_mea()
 
@@ -32,7 +32,7 @@ examples.
 Square MEA
 ~~~~~~~~~~
 
-.. code:: ipython3
+.. code-block:: python
 
     sqmea_info = MEA.return_mea_info('SqMEA-10-15um')
     pprint(sqmea_info)
@@ -61,7 +61,7 @@ the next column (the last index is the electrode on the top right). The
 
 Let's now instantiate a MEA object:
 
-.. code:: ipython3
+.. code-block:: python
 
     sqmea = MEA.return_mea('SqMEA-10-15um')
     print(type(sqmea))
@@ -80,7 +80,7 @@ Let's now instantiate a MEA object:
 
 The MEA is a rectangular MEA with 100 electrodes.
 
-.. code:: ipython3
+.. code-block:: python
 
     plt.plot(sqmea.positions[:, 1], sqmea.positions[:, 2], 'b*')
     plt.plot(sqmea.positions[0, 1], sqmea.positions[0, 2], 'r*')
@@ -97,7 +97,7 @@ The MEA is a rectangular MEA with 100 electrodes.
 Rectangular MEAs can be handled as matrices, where the first inex is the
 ROW and the second index is the COLUMN:
 
-.. code:: ipython3
+.. code-block:: python
 
     print(sqmea[0][0].position) # electrode 0
     print(sqmea[9][0].position) # electrode 9
@@ -116,7 +116,7 @@ ROW and the second index is the COLUMN:
 Rectangular MEA
 ~~~~~~~~~~~~~~~
 
-.. code:: ipython3
+.. code-block:: python
 
     neuroseeker_info = MEA.return_mea_info('Neuroseeker-128')
     pprint(neuroseeker_info)
@@ -136,7 +136,7 @@ Rectangular MEA
 This MEA is rectangular, with 32 rows, 4 columns, and a regular pitch of
 22.5um
 
-.. code:: ipython3
+.. code-block:: python
 
     neuroseeker = MEA.return_mea('Neuroseeker-128')
     print(type(neuroseeker))
@@ -153,7 +153,7 @@ This MEA is rectangular, with 32 rows, 4 columns, and a regular pitch of
     [32, 4]
 
 
-.. code:: ipython3
+.. code-block:: python
 
     plt.plot(neuroseeker.positions[:, 1], neuroseeker.positions[:, 2], 'b*')
     _ = plt.axis('equal')
@@ -182,7 +182,7 @@ When ``dim`` and ``pitch`` is are single ``int`` (or ``float`` for
 ``pitch``) or a list of 2 values, a rectangular MEA is created. Some MEA
 configuration can be different.
 
-.. code:: ipython3
+.. code-block:: python
 
     neuronexus_info = MEA.return_mea_info('Neuronexus-32')
     pprint(neuronexus_info)
@@ -217,7 +217,7 @@ elements of ``dim``.
 
 Given this information, we can wxpect how the neuronexus MEA looks like:
 
-.. code:: ipython3
+.. code-block:: python
 
     neuronexus = MEA.return_mea('Neuronexus-32')
     plt.plot(neuronexus.positions[:, 1], neuronexus.positions[:, 2], 'b*')
@@ -242,7 +242,7 @@ package, so that they are available from the entire file system.
 
 Let's first create a ``user.yaml`` file on-the-fly.
 
-.. code:: ipython3
+.. code-block:: python
 
     import yaml, os
     
@@ -269,7 +269,7 @@ Let's first create a ``user.yaml`` file on-the-fly.
 
 Now we can add the newly created yaml file to the MEA package:
 
-.. code:: ipython3
+.. code-block:: python
 
     MEA.add_mea('user.yaml')
 
@@ -282,7 +282,7 @@ Now we can add the newly created yaml file to the MEA package:
 
 and create a ``user`` MEA object:
 
-.. code:: ipython3
+.. code-block:: python
 
     usermea = MEA.return_mea('user')
     plt.plot(usermea.positions[:, 1], usermea.positions[:, 2], 'b*')
@@ -302,7 +302,7 @@ and create a ``user`` MEA object:
 If we don't need the ``user`` MEA anymore, we can remove it from the MEA
 package:
 
-.. code:: ipython3
+.. code-block:: python
 
     MEA.remove_mea('user')
 
