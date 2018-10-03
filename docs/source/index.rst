@@ -13,13 +13,13 @@ Installation
 
 To install run:
 
-.. code::
+.. code-block:: python
 
     pip install MEAutility
 
 If you want to install from sources and be updated with the latest development you can install with:
 
-.. code::
+.. code-block:: python
 
     git clone https://github.com/alejoe91/MEAutility
     cd MEAutility
@@ -28,7 +28,7 @@ If you want to install from sources and be updated with the latest development y
 
 The package can then imported in Python with:
 
-.. code::
+.. code-block:: python
 
     import MEAutility as MEA
 
