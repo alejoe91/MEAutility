@@ -12,10 +12,12 @@ Installation
 ============
 
 To install run:
+.. code:: ipython3
+
     pip install MEAutility
 
 If you want to install from sources and be updated with the latest development you can install with:
-
+.. code:: ipython3
 
     git clone https://github.com/alejoe91/MEAutility
     cd MEAutility
@@ -24,6 +26,7 @@ If you want to install from sources and be updated with the latest development y
 
 
 The package can then imported in Python with:
+.. code:: ipython3
 
     import MEAutility as MEA
 
@@ -34,15 +37,16 @@ Requirements
 - pyyaml
 - matplotlib
 
-Contact
-=======
-
-If you have questions or comments, contact Alessio Buccino: alessopb@ifi.uio.no
-
 .. toctree::
    :maxdepth: 2
-   
+
    mea_definitions
    mea_handling
    mea_stimulation
    mea_plotting
+
+
+Contact
+=======
+
+If you have questions or comments, contact Alessio Buccino: alessiob@ifi.uio.no
