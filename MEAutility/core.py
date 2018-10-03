@@ -591,7 +591,7 @@ class MEA(object):
 
     def load_currents(self, filename):
         if os.path.isfile(filename):
-            currente = np.load(filename)
+            currents = np.load(filename)
             if len(currents) != self.number_electrodes:
                 print('Error: number of currents in file different than number of electrodes')
             else:
