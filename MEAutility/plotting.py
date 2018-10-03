@@ -250,202 +250,166 @@ def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1
     return ax
 
 
-# # TODO 3d surf plot
-# def plot_v_plane(mea, plane, offset=100):
-#     '''
-#
-#     Parameters
-#     ----------
-#     mea
-#     plane
-#
-#     Returns
-#     -------
-#
-#     '''
-#     if plane == 'xy':
-#         x_vec = np.arange(1, bound, unit)
-#         y_vec = np.arange(-bound, bound, unit)
-#         z_vec = np.arange(-bound, bound, unit)
-#     elif plane == 'yz':
-#
-#     elif plane == 'xz':
-#
-#
-#     x, y, z = np.meshgrid(x_vec, y_vec, z_vec)
-#
-#     v_grid = np.zeros((len(y_vec), len(z_vec)))
-#
-#     # maintain matrix orientation (row - z, column - y, [0,0] - top left corner)
-#     z_vec = z_vec[::-1]
-#
-#     for ii in range(len(z_vec)):
-#         for jj in range(len(y_vec)):
-#             v_grid[ii, jj] = mea.compute_field(np.array([15, y_vec[jj], z_vec[ii]]))
-#
-#
-#     fig = plt.figure(figsize=[6, 16])
-#     gs = gridspec.GridSpec(9,
-#                            10,
-#                            hspace=0.,
-#                            wspace=0.)
-#     fig.subplots_adjust(left=0.01, right=.8, top=1., bottom=0.01)
-#     elev = 30
-#     azim = -60
-#     dist = 10
-#     # Add surface
-#     y_plane, z_plane = np.meshgrid(y_vec, z_vec)
-#
-#     v_grid_orig = np.zeros((len(y_vec), len(z_vec)))
-#
-#     # maintain matrix orientation (row - z, column - y, [0,0] - top left corner)
-#
-#     for ii in range(len(z_vec)):
-#         for jj in range(len(y_vec)):
-#             v_grid_orig[ii, jj] = mea.compute_field(np.array(
-#                 [15, y_plane[ii][jj], z_plane[ii][jj]]))
-#
-#     # ax1 = fig.add_subplot(311, projection='3d')
-#     ax1 = fig.add_subplot(gs[0:3, 0:9], projection='3d')
-#     # ax1 = plt.subplot2grid((3, 3), (1, 0), colspan=2)
-#
-#     ax1.view_init(elev=elev, azim=azim)
-#     surf1 = ax1.plot_surface(y_plane,
-#                              z_plane,
-#                              v_grid_orig,
-#                              cmap=cm.coolwarm,
-#                              alpha=0.3,
-#                              zorder=0,
-#                              antialiased=True)
-#     # ax1.contour(y_plane,
-#     #             z_plane,
-#     #             v_grid_orig,
-#     #             cmap=cm.coolwarm,
-#     #             extend3d=True,)
-#
-#     ax1.set_xticklabels([])
-#     ax1.set_yticklabels([])
-#     ax1.set_zticklabels([])
-#     # Get rid of the panes
-#     ax1.w_xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-#     ax1.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-#     ax1.w_zaxis.set_pane_color((1.0, 1.0, 1., 0.0))
-#
-#     # Get rid of the spines
-#     ax1.w_xaxis.line.set_color((1.0, 1.0, 1., 0.0))
-#     ax1.w_yaxis.line.set_color((1.0, 1.0, 1., 0.0))
-#     ax1.w_zaxis.line.set_color((1.0, 1.0, 1., 0.0))
-#     ax1.dist = 10..
-#     cax1 = fig.add_subplot(gs[1, 9:])
-#     cbar_ax1 = fig.colorbar(surf1, cax=cax1)
-#     cbar_ax1.set_label('mV', rotation=270)
-#
-#     ax2 = fig.add_subplot(gs[3:6, 0:9], projection='3d')
-#     cax2 = fig.add_subplot(gs[4, 9:])
-#     ax2.view_init(elev=elev, azim=azim)
-#     ax2.set_xlim3d(-30, 30)
-#     ax2.set_ylim3d(-30, 30)
-#     ax2.set_zlim3d(0, 30)
-#     ax2.dist = 10..
-#     soma_length = 3.
-#     soma_radius = 1.
-#     axon_length = 15.
-#     axon_radius = .2
-#     n_points = 20.
-#
-#     verts = []
-#     elec_size = 5
-#     for e in range(mea.number_electrodes):
-#         yy = [mea.electrodes[e].position[1] - elec_size,
-#               mea.electrodes[e].position[1] - elec_size,
-#               mea.electrodes[e].position[1] + elec_size,
-#               mea.electrodes[e].position[1] + elec_size]
-#         zz = [mea.electrodes[e].position[2] + elec_size,
-#               mea.electrodes[e].position[2] - elec_size,
-#               mea.electrodes[e].position[2] - elec_size,
-#               mea.electrodes[e].position[2] + elec_size]
-#         xx = [0, 0, 0, 0]
-#         verts.append(list(zip(yy, zz, xx)))
-#
-#     jet = plt.get_cmap('jet')
-#     colors = mea.get_currents() / np.max(np.abs(mea.get_current_matrix())) + 1
-#     curr = ax2.add_collection3d(Poly3DCollection(verts,
-#                                                  #                                            zorder=1,
-#                                                  alpha=0.8,
-#                                                  color=jet(colors)))
-#     currents = mea.get_currents() / 1000
-#
-#     m = cm.ScalarMappable(cmap=cm.jet)
-#     bounds = np.round(np.linspace(np.min(currents), np.max(currents), 7))
-#     norm = mpl_colors.BoundaryNorm(bounds, cm.jet)
-#     m.set_array(currents)
-#     cbar_ax2 = plt.colorbar(m, cax=cax2, norm=norm, boundaries=bounds)
-#     cbar_ax2.set_label('mA', rotation=270)
-#     # ghost_axis = ax2.scatter(xx, yy, zz, color=jet(colors))
-#     # cax2 = fig.add_subplot(gs[4, 9:])
-#     # fig.colorbar(ghost_axis, cax=cax2)
-#     # ghost_axis.axis('off')
-#     # cmap = plt.cm.jet
-#     # norm = mpl.colors.BoundaryNorm(colors, cmap)
-#
-#     # cb = mpl.colorbar.ColorbarBase(ax2,
-#     #                                cmap=cax2,
-#     #                                norm=norm)
-#
-#     ax2.set_xticklabels([])
-#     ax2.set_yticklabels([])
-#
-#     # Get rid of the panes
-#     ax2.w_xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-#     ax2.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-#     ax2.w_zaxis.set_pane_color((1.0, 1.0, 1., 0.0))
-#
-#     # Get rid of the spines
-#     ax2.w_xaxis.line.set_color((1.0, 1.0, 1., 0.0))
-#     ax2.w_yaxis.line.set_color((1.0, 1.0, 1., 0.0))
-#     ax2.w_zaxis.line.set_color((1.0, 1.0, 1., 0.0))
-#
-#     # ax2.set_xlabel('Y [um]')
-#     # ax2.set_ylabel('Z [um]')
-#     ax2.set_zlabel('Z [um]')
-#
-#     # last axis
-#     ax0 = fig.add_subplot(gs[6:9, 0:9], projection='3d')
-#
-#     ax0.view_init(elev=elev, azim=azim)
-#     ax0.dist = 10..
-#     # plot data points.
-#     # ax0.scatter([mea.electrodes[elec].position[1] for elec in range(0, mea.number_electrodes)],
-#     #             [mea.electrodes[elec].position[2] for elec in range(0, mea.number_electrodes)],
-#     #             marker='o', c='b', s=50, zorder=2)
-#     ax0.set_xlabel('y ($\mu$m)', fontsize=20)
-#     ax0.set_ylabel('z ($\mu$m)', fontsize=20)
-#     ax0.xaxis.set_tick_params(labelsize=15, width=5)
-#     ax0.yaxis.set_tick_params(labelsize=15, width=5)
-#
-#     # ax0.set_xticklabels([])
-#     # ax0.set_yticklabels([])
-#     ax0.set_zticks([])
-#     # Get rid of the panes
-#     ax0.w_xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-#     ax0.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-#     ax0.w_zaxis.set_pane_color((1.0, 1.0, 1., 0.0))
-#
-#     # Get rid of the spines
-#     ax0.w_xaxis.line.set_color((1.0, 1.0, 1., 0.0))
-#     ax0.w_yaxis.line.set_color((1.0, 1.0, 1., 0.0))
-#     ax0.w_zaxis.line.set_color((1.0, 1.0, 1., 0.0))
-#
-#     ax0.grid(b=False)
-#
-#     ax0.set_zlim3d(0, 0.1)
-#
-#     CS = ax0.contourf(y_vec,
-#                       z_vec,
-#                       v_grid_orig,
-#                       zdir='z',
-#                       offset=-0.0001,
-#                       cmap=cm.coolwarm)
+def plot_v_image(mea, v_plane=None, x_bound=None, y_bound=None, z_bound=None, offset=0,
+                 plane='yz', npoints=30, ax=None, cmap='viridis', **kwargs):
+    '''
+
+    Parameters
+    ----------
+    mea
+    plane
+
+    Returns
+    -------
+
+    '''
+    if v_plane is None:
+        v_grid = np.zeros((npoints, npoints))
+        if plane == 'xy':
+            assert x_bound is not None and y_bound is not None
+            vec1 = np.linspace(x_bound[0], x_bound[1], npoints)
+            vec2 = np.linspace(y_bound[0], y_bound[1], npoints)
+            for i, v1 in enumerate(vec1):
+                for j, v2 in enumerate(vec2):
+                    v_grid[i, j] = mea.compute_field(np.array([v1, v2, offset]))
+        elif plane == 'yz':
+            assert y_bound is not None and z_bound is not None
+            vec1 = np.linspace(y_bound[0], y_bound[1], npoints)
+            vec2 = np.linspace(z_bound[0], z_bound[1], npoints)
+            for i, v1 in enumerate(vec1):
+                for j, v2 in enumerate(vec2):
+                    v_grid[i, j] = mea.compute_field(np.array([offset, v1, v2]))
+        elif plane == 'xz':
+            assert x_bound is not None and z_bound is not None
+            vec1 = np.linspace(x_bound[0], x_bound[1], npoints)
+            vec2 = np.linspace(z_bound[0], z_bound[1], npoints)
+            for i, v1 in enumerate(vec1):
+                for j, v2 in enumerate(vec2):
+                    v_grid[i, j] = mea.compute_field(np.array([v1, offset, v2]))
+
+        if ax is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+
+        ax.matshow(v_grid.T, origin='lower', extent=[vec1[0], vec1[-1], vec2[0], vec2[-1]], cmap=cmap, **kwargs)
+    else:
+        v_grid = v_plane.T
+        if plane == 'xy':
+            assert x_bound is not None and y_bound is not None
+            vec1 = np.linspace(x_bound[0], x_bound[1], npoints)
+            vec2 = np.linspace(y_bound[0], y_bound[1], npoints)
+        elif plane == 'yz':
+            assert y_bound is not None and z_bound is not None
+            vec1 = np.linspace(y_bound[0], y_bound[1], npoints)
+            vec2 = np.linspace(z_bound[0], z_bound[1], npoints)
+        elif plane == 'xz':
+            assert x_bound is not None and z_bound is not None
+            vec1 = np.linspace(x_bound[0], x_bound[1], npoints)
+            vec2 = np.linspace(z_bound[0], z_bound[1], npoints)
+        ax.matshow(v_plane, origin='lower', extent=[vec1[0], vec1[-1], vec2[0], vec2[-1]], cmap=cmap, **kwargs)
+
+    return ax, v_grid.T
+
+
+def plot_v_surf(mea, v_plane=None, x_bound=None, y_bound=None, z_bound=None, offset=0,
+                plane='yz',  plot_plane=None, npoints=30, ax=None, cmap='viridis', alpha=0.8, distance=30, **kwargs):
+    '''
+
+    Parameters
+    ----------
+    mea
+    plane
+
+    Returns
+    -------
+
+    '''
+    from mpl_toolkits.mplot3d import Axes3D
+
+    if v_plane is None:
+        v_grid = np.zeros((npoints, npoints))
+        if plane == 'xy':
+            assert x_bound is not None and y_bound is not None
+            vec1 = np.linspace(x_bound[0], x_bound[1], npoints)
+            vec2 = np.linspace(y_bound[0], y_bound[1], npoints)
+            for i, v1 in enumerate(vec1):
+                for j, v2 in enumerate(vec2):
+                    v_grid[i, j] = mea.compute_field(np.array([v1, v2, offset]))
+        elif plane == 'yz':
+            assert y_bound is not None and z_bound is not None
+            vec1 = np.linspace(y_bound[0], y_bound[1], npoints)
+            vec2 = np.linspace(z_bound[0], z_bound[1], npoints)
+            for i, v1 in enumerate(vec1):
+                for j, v2 in enumerate(vec2):
+                    v_grid[i, j] = mea.compute_field(np.array([offset, v1, v2]))
+        elif plane == 'xz':
+            assert x_bound is not None and z_bound is not None
+            vec1 = np.linspace(x_bound[0], x_bound[1], npoints)
+            vec2 = np.linspace(z_bound[0], z_bound[1], npoints)
+            for i, v1 in enumerate(vec1):
+                for j, v2 in enumerate(vec2):
+                    v_grid[i, j] = mea.compute_field(np.array([v1, offset, v2]))
+        # elif plane == 'par':
+        #     assert x_bound is not None and z_bound is not None
+        #     vec1 = np.linspace(x_bound[0], x_bound[1], npoints)
+        #     vec2 = np.linspace(z_bound[0], z_bound[1], npoints)
+        #     for i, v1 in enumerate(vec1):
+        #         for j, v2 in enumerate(vec2):
+        #             v_grid[i, j] = mea.compute_field(np.array([v1, offset, v2]))
+
+        if ax is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(1, 1, 1, projection='3d')
+
+        v1_plane, v2_plane = np.meshgrid(vec1, vec2)
+        surf1 = ax.plot_surface(v1_plane,
+                                v2_plane,
+                                v_grid.T,
+                                cmap=cmap,
+                                alpha=alpha,
+                                zorder=0,
+                                antialiased=True)
+        if plot_plane is not None:
+            if plot_plane == 'xy':
+                rotate_poly3Dcollection(surf1, [1, 0, 0], [0, 1, 0], shift=[0, 0, distance])
+            elif plot_plane == 'yz':
+                rotate_poly3Dcollection(surf1, [0, 1, 0], [0, 0, 1], shift=[distance, 0, 0])
+            elif plot_plane == 'xz':
+                rotate_poly3Dcollection(surf1, [1, 0, 0], [0, 0, 1], shift=[0, distance, 0])
+            # elif plot_plane == 'par':
+
+
+    else:
+        v_grid = v_plane
+        if plane == 'xy':
+            assert x_bound is not None and y_bound is not None
+            vec1 = np.linspace(x_bound[0], x_bound[1], npoints)
+            vec2 = np.linspace(y_bound[0], y_bound[1], npoints)
+        elif plane == 'yz':
+            assert y_bound is not None and z_bound is not None
+            vec1 = np.linspace(y_bound[0], y_bound[1], npoints)
+            vec2 = np.linspace(z_bound[0], z_bound[1], npoints)
+        elif plane == 'xz':
+            assert x_bound is not None and z_bound is not None
+            vec1 = np.linspace(x_bound[0], x_bound[1], npoints)
+            vec2 = np.linspace(z_bound[0], z_bound[1], npoints)
+        v1_plane, v2_plane = np.meshgrid(vec1, vec2)
+        surf1 = ax.plot_surface(v1_plane,
+                                v2_plane,
+                                v_grid.T,
+                                cmap=cmap,
+                                alpha=alpha,
+                                zorder=0,
+                                antialiased=True)
+        if plot_plane is not None:
+            if plot_plane == 'xy':
+                rotate_poly3Dcollection(surf1, [1, 0, 0], [0, 1, 0], shift=[0, 0, distance])
+            elif plot_plane == 'yz':
+                rotate_poly3Dcollection(surf1, [0, 1, 0], [0, 0, 1], shift=[distance, 0, 0])
+            elif plot_plane == 'xz':
+                rotate_poly3Dcollection(surf1, [1, 0, 0], [0, 0, 1], shift=[0, distance, 0])
+
+    return ax, v_grid.T
 
 
 def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, spacing=None,
@@ -474,7 +438,6 @@ def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, s
 
     mea_pos = np.array([np.dot(mea.positions, mea.main_axes[0]), np.dot(mea.positions, mea.main_axes[1])]).T
     mea_pitch = [np.max(np.diff(mea_pos[:,0])), np.max(np.diff(mea_pos[:,1]))]
-    print(mea_pitch)
 
     if spacing is None:
         spacing = 0.1*np.max(mea_pitch)
@@ -532,26 +495,26 @@ def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, s
         ax.set_yticks([])
         ax.axis('off')
 
-    if scalebar:
-        if dt is None and time is None:
-            raise AttributeError('Pass either dt or time in the argument')
-        else:
-            shift = 0.1*spacing
-            pos_h = [np.min(mea_pos[:, 1]), np.min(mea_pos[:, 2]) - 1.5*mea_pitch[1]]
-            if vscale is None:
-                length_h = mea_pitch[1] * signalmin / (signalmin // 10 * 10)
-            else:
-                length_h = mea_pitch[1]
-            pos_w = [np.min(mea_pos[:, 1]), np.min(mea_pos[:, 2]) - 1.5*mea_pitch[1]]
-            length_w = mea_pitch[0]/5.
-
-            ax.plot([pos_h[0], pos_h[0]], [pos_h[1], pos_h[1] + length_h], color='k', lw=2)
-            if vscale is None:
-                ax.text(pos_h[0]+shift, pos_h[1] + length_h / 2., str(int(signalmin // 10 * 10)) + ' $\mu$V')
-            else:
-                ax.text(pos_h[0]+shift, pos_h[1] + length_h / 2., str(int(vscale)) + ' $\mu$V')
-            ax.plot([pos_w[0], pos_w[0]+length_w], [pos_w[1], pos_w[1]], color='k', lw=2)
-            ax.text(pos_w[0]+shift, pos_w[1]-length_h/3., str(time/5) + ' ms')
+    # if scalebar:
+    #     if dt is None and time is None:
+    #         raise AttributeError('Pass either dt or time in the argument')
+    #     else:
+    #         shift = 0.1*spacing
+    #         pos_h = [np.min(mea_pos[:, 0]), np.min(mea_pos[:, 1]) - 1.5*mea_pitch[1]]
+    #         if vscale is None:
+    #             length_h = mea_pitch[1] * signalmin / (signalmin // 10 * 10)
+    #         else:
+    #             length_h = mea_pitch[1]
+    #         pos_w = [np.min(mea_pos[:, 0]), np.min(mea_pos[:, 1]) - 1.5*mea_pitch[1]]
+    #         length_w = mea_pitch[0]/5.
+    #
+    #         ax.plot([pos_h[0], pos_h[0]], [pos_h[1], pos_h[1] + length_h], color='k', lw=2)
+    #         if vscale is None:
+    #             ax.text(pos_h[0]+shift, pos_h[1] + length_h / 2., str(int(signalmin // 10 * 10)) + ' $\mu$V')
+    #         else:
+    #             ax.text(pos_h[0]+shift, pos_h[1] + length_h / 2., str(int(vscale)) + ' $\mu$V')
+    #         ax.plot([pos_w[0], pos_w[0]+length_w], [pos_w[1], pos_w[1]], color='k', lw=2)
+    #         ax.text(pos_w[0]+shift, pos_w[1]-length_h/3., str(time/5) + ' ms')
 
     if not no_tight:
         fig.tight_layout()
@@ -587,9 +550,14 @@ def play_mea_recording(rec, mea, fs, window=1, step=0.1, colors=None, lw=1, ax=N
     -------
 
     '''
+    import matplotlib.animation as animation
+
     n_window = int(fs * window)
     n_step = int(fs * step)
     start = np.arange(0, rec.shape[1], n_step)
+
+    mea_pos = np.array([np.dot(mea.positions, mea.main_axes[0]), np.dot(mea.positions, mea.main_axes[1])]).T
+    mea_pitch = [np.max(np.diff(mea_pos[:, 0])), np.max(np.diff(mea_pos[:, 1]))]
 
     if fig is None:
         fig = plt.figure()
@@ -621,8 +589,8 @@ def play_mea_recording(rec, mea, fs, window=1, step=0.1, colors=None, lw=1, ax=N
         if len(rec.shape) == 3:  # multiple
             raise Exception('Dimensions should be Nchannels x Nsamples')
         else:
-            line, = ax.plot(np.linspace(0, mea_pitch[0] - spacing, n_window) + mea_pos[el, 1],
-                            np.zeros(n_window) + mea_pos[el, 2], color=colors, lw=lw)
+            line, = ax.plot(np.linspace(0, mea_pitch[0] - spacing, n_window) + mea_pos[el, 0],
+                            np.zeros(n_window) + mea_pos[el, 1], color=colors, lw=lw)
             lines.append(line)
 
     text = ax.text(0.7, 0, 'Time: ',
@@ -635,11 +603,11 @@ def play_mea_recording(rec, mea, fs, window=1, step=0.1, colors=None, lw=1, ax=N
     def update(i):
         if n_window + i < rec.shape[1]:
             for el in range(number_electrodes):
-                lines[el].set_ydata(rec_norm[el, i:n_window + i] + mea_pos[el, 2])
+                lines[el].set_ydata(rec_norm[el, i:n_window + i] + mea_pos[el, 1])
         else:
             for el in range(number_electrodes):
                 lines[el].set_ydata(np.pad(rec_norm[el, i:],
-                                           (0, n_window - (rec.shape[1] - i)), 'constant') + mea_pos[el, 2])
+                                           (0, n_window - (rec.shape[1] - i)), 'constant') + mea_pos[el, 1])
 
         text.set_text('Time: ' + str(round(i / float(fs), 1)) + ' s')
 
@@ -690,6 +658,17 @@ def plot_cylinder_3d(bottom, direction, length, radius, color='k', alpha=.5, ax=
 
     return ax
 
+
+def rotate_poly3Dcollection(poly3d, axis_1, axis_2, shift=[0,0,0]):
+    vec = poly3d._vec
+    shift = np.array(shift)
+    M = np.array([axis_1, axis_2, np.cross(axis_1, axis_2)])  # Get the rotation matrix
+
+    rotated_vec = np.array([np.append(np.dot(M.T, v[:3]) + shift, v[-1]) for v in vec.T]).T
+    poly3d._vec = rotated_vec
+
+
+
 def make_3d_ellipse_patch(size, axis_1, axis_2, position, ax, facecolor='orange', edgecolor=None, alpha=1):
     '''
 
@@ -724,9 +703,6 @@ def make_3d_ellipse_patch(size, axis_1, axis_2, position, ax, facecolor='orange'
     verts = path.vertices  # Get the vertices in 2D
 
     M = np.array([axis_1, axis_2, np.cross(axis_1, axis_2)])  # Get the rotation matrix
-
-    verts_3d = np.array([(x, y, 0) for x, y in verts])
-    verts_3d_rot = np.array([np.dot(M, (x, y, 0)) for x, y in verts])
 
     p._segment3d = np.array([np.dot(M.T, (x, y, 0)) for x, y in verts])
     p._segment3d += position
