@@ -13,23 +13,22 @@ Installation
 
 To install run:
 
-.. code:: ipython3
+.. code::
 
     pip install MEAutility
 
 If you want to install from sources and be updated with the latest development you can install with:
 
-.. code:: ipython3
+.. code::
 
     git clone https://github.com/alejoe91/MEAutility
     cd MEAutility
     python setup.py install (or develop)
-    
 
 
 The package can then imported in Python with:
 
-.. code:: ipython3
+.. code::
 
     import MEAutility as MEA
 
