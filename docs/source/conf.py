@@ -40,6 +40,8 @@ release = '1.1'
 # ones.
 extensions = ['sphinx.ext.mathjax']
 
+mathjax_path = '/home/alessio/Documents/Codes/MathJax/MathJax.js'
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
