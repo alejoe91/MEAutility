@@ -166,6 +166,7 @@ def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1
 
     if color_currents:
         norm_curr = mea.currents / np.max(np.abs(mea.currents))
+        norm_curr += np.abs(np.min(norm_curr))
         colormap = plt.get_cmap(cmap)
         elec_colors = colormap(norm_curr)
     else:

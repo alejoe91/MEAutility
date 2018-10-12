@@ -1023,6 +1023,18 @@ def return_mea_info(electrode_name=None):
             print('Available MEA: \n', electrodes)
             return
 
+def return_mea_list():
+    '''
+
+    Returns
+    -------
+
+    '''
+    this_dir, this_filename = os.path.split(__file__)
+    electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
+    return electrodes
+
+
 def add_mea(mea_yaml_path):
     '''Adds the mea design defined by the yaml file in the install folder
 
