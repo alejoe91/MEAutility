@@ -1,9 +1,9 @@
 language: python
 python:
-  - "2.7"
-  - "3.4"
-  - "3.5"
-  - "3.6"
+- '2.7'
+- '3.4'
+- '3.5'
+- '3.6'
 sudo: enabled
 install:
 - pip install .
@@ -14,3 +14,5 @@ deploy:
   user: alejoe91
   on:
     tags: true
+  password:
+    secure: eZFJZbihzQVPvAKcEOYX8nW4+PCLFUJBcpa4vdu82LGT+k1JQVwe6Y3gOr83hScs4hPKsBDsOQwjk8ubQlYa+p9dIk7E4DZZfsYoyM+AoilDyxt4V8WG4W4MynFTIqR0oT5o0fxY3NHgsZepwXLdPe3TsRfAQ0OD69662zmkzuB4+qgha/KXO0vJil+JXsEi7pNMJcf5E7uW4lAfllOwFmVDFOhtbIvXfmm37Z3+anEIQT4gABnKu5MdLErDxqUS1GCVweCIhMbcmxuIIeG1ReB0wQ2sYzbGNhWDzXDv6cffMNeusB0yujz/hc+SVUDFErYF2fttTQsJpanWRGZy9xw5LS/HMGOs68eH+CciI8eLt9xpt8QPFYgfN0hEAtzYawqtDXPODmEJXgEnPZOZsVQl1S9ongMvvuOPxkH1PlFKgWFj+1Sjtquei8gvaHE0bhTB4enVaK2pnsYleS3hkHQHv7BlCixz3AvVDvyjU7wLzfxU9Tw5lZ2/4JDOhW8VJwInHyGrKpuQqIuOsBNkEAqzETzyn+3joR6dCPnjPCQEDMcMq/lU7vuPaqGA28dAqxgS870gRZQjl3pVWJgC7XHki2anjGC+N+hXX7BfPOVHmevxS6C53QzGLpsf3bh+HpTkJzWB60qdtUyOWZW9Y9FFo9xJ3u5kjmhWk7HR7pk=
