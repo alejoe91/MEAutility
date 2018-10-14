@@ -9,13 +9,18 @@ install_requires = []
 
 setup(
     name="MEAutility",
-    version="1.2",
+    version="1.2.1",
     author="Alessio Buccino",
     author_email="alessiob@ifi.uio.no",
     description="Python package for multi-electrode array (MEA) handling and stimulation.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/alejoe91/MEAutility",
+    install_requires=[
+        'numpy',
+        'pyyaml',
+        'matplotlib'
+    ],
     classifiers=[
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 3",

@@ -3,7 +3,7 @@ from __future__ import print_function
 import numpy as np
 from .core import MEA, RectMEA, rotation_matrix
 import matplotlib
-import pylab as plt
+import matplotlib.pylab as plt
 
 import matplotlib.patches as patches
 from matplotlib.path import Path
