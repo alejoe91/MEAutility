@@ -757,7 +757,7 @@ def center_mea(pos):
     return pos - np.mean(pos, axis=0, keepdims=True)
 
 
-def get_positions(elinfo):
+def get_positions(elinfo, center=True):
     '''Computes the positions of the elctrodes based on the elinfo
 
     Parameters
@@ -906,7 +906,7 @@ def get_positions(elinfo):
                 pos = add_3dim(pos2d, plane, offset)
         electrode_pos = True
 
-    if electrode_pos:
+    if electrode_pos and center:
         centered_pos = center_mea(pos)
         # resort electrodes in case
         centered_pos_sorted = copy.deepcopy(centered_pos)
@@ -917,6 +917,16 @@ def get_positions(elinfo):
         else:
             centered_pos_sorted = centered_pos
         return centered_pos_sorted
+    elif electrode_pos and not center:
+        # resort electrodes in case
+        pos_sorted = copy.deepcopy(pos)
+        if 'sortlist' in elinfo.keys() and elinfo['sortlist'] is not None:
+            sortlist = elinfo['sortlist']
+            for i, si in enumerate(sortlist):
+                pos_sorted[si] = pos[i]
+        else:
+            pos_sorted = pos
+        return pos_sorted
     else:
         print("Define either a list of positions 'pos' or 'dim' and 'pitch'")
         return None
@@ -980,7 +990,11 @@ def return_mea(electrode_name=None, info=None):
             return
     elif info is not None:
         elinfo = info
-        pos = get_positions(elinfo)
+        if 'center' in elinfo.keys():
+            center = elinfo['center']
+        else:
+            center=True
+        pos = get_positions(elinfo, center=center)
         # create MEA object
         if check_if_rect(elinfo):
             mea = RectMEA(positions=pos, info=elinfo)

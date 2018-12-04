@@ -438,14 +438,14 @@ def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, s
         no_tight = True
 
     mea_pos = np.array([np.dot(mea.positions, mea.main_axes[0]), np.dot(mea.positions, mea.main_axes[1])]).T
-    mea_pitch = [np.max(np.diff(mea_pos[:,0])), np.max(np.diff(mea_pos[:,1]))]
+    mea_pitch = [np.max(np.diff(np.sort(mea_pos[:,0]))), np.max(np.diff(np.sort(mea_pos[:,1])))]
 
     if spacing is None:
         spacing = 0.1*np.max(mea_pitch)
 
     # normalize to min peak
     if vscale is None:
-        signalmin = 1.5*   np.max(np.abs(signals))
+        signalmin = 1.5*np.max(np.abs(signals))
         spike_norm = signals / signalmin * mea_pitch[1]
     else:
         spike_norm = signals / vscale * mea_pitch[1]
