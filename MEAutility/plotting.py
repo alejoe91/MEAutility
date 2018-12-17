@@ -496,26 +496,26 @@ def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, s
         ax.set_yticks([])
         ax.axis('off')
 
-    # if scalebar:
-    #     if dt is None and time is None:
-    #         raise AttributeError('Pass either dt or time in the argument')
-    #     else:
-    #         shift = 0.1*spacing
-    #         pos_h = [np.min(mea_pos[:, 0]), np.min(mea_pos[:, 1]) - 1.5*mea_pitch[1]]
-    #         if vscale is None:
-    #             length_h = mea_pitch[1] * signalmin / (signalmin // 10 * 10)
-    #         else:
-    #             length_h = mea_pitch[1]
-    #         pos_w = [np.min(mea_pos[:, 0]), np.min(mea_pos[:, 1]) - 1.5*mea_pitch[1]]
-    #         length_w = mea_pitch[0]/5.
-    #
-    #         ax.plot([pos_h[0], pos_h[0]], [pos_h[1], pos_h[1] + length_h], color='k', lw=2)
-    #         if vscale is None:
-    #             ax.text(pos_h[0]+shift, pos_h[1] + length_h / 2., str(int(signalmin // 10 * 10)) + ' $\mu$V')
-    #         else:
-    #             ax.text(pos_h[0]+shift, pos_h[1] + length_h / 2., str(int(vscale)) + ' $\mu$V')
-    #         ax.plot([pos_w[0], pos_w[0]+length_w], [pos_w[1], pos_w[1]], color='k', lw=2)
-    #         ax.text(pos_w[0]+shift, pos_w[1]-length_h/3., str(time/5) + ' ms')
+    if scalebar:
+        if dt is None and time is None:
+            raise AttributeError('Pass either dt or time in the argument')
+        else:
+            shift = 0.1*spacing
+            pos_h = [np.min(mea_pos[:, 0]), np.min(mea_pos[:, 1]) - 1.5*mea_pitch[1]]
+            if vscale is None:
+                length_h = mea_pitch[1] * signalmin / (signalmin // 10 * 10)
+            else:
+                length_h = mea_pitch[1]
+            pos_w = [np.min(mea_pos[:, 0]), np.min(mea_pos[:, 1]) - 1.5*mea_pitch[1]]
+            length_w = mea_pitch[0]/5.
+
+            ax.plot([pos_h[0], pos_h[0]], [pos_h[1], pos_h[1] + length_h], color='k', lw=2)
+            if vscale is None:
+                ax.text(pos_h[0]+shift, pos_h[1] + length_h / 2., str(int(signalmin // 10 * 10)) + ' $\mu$V')
+            else:
+                ax.text(pos_h[0]+shift, pos_h[1] + length_h / 2., str(int(vscale)) + ' $\mu$V')
+            ax.plot([pos_w[0], pos_w[0]+length_w], [pos_w[1], pos_w[1]], color='k', lw=2)
+            ax.text(pos_w[0]+shift, pos_w[1]-length_h/3., str(time/5) + ' ms')
 
     if not no_tight:
         fig.tight_layout()
