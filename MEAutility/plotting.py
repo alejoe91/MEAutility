@@ -188,33 +188,38 @@ def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1
                 p = make_3d_ellipse_patch(mea.size, mea.main_axes[0], mea.main_axes[1],
                                       pos, ax, facecolor=elec_colors[i], edgecolor=None, alpha=0.7)
 
+        center_probe = mea.positions.mean(axis=0)
         min_dim_1 = np.min(np.dot(mea.positions, mea.main_axes[0]))
         min_dim_2 = np.min(np.dot(mea.positions, mea.main_axes[1]))
         max_dim_1 = np.max(np.dot(mea.positions, mea.main_axes[0]))
         max_dim_2 = np.max(np.dot(mea.positions, mea.main_axes[1]))
 
-        center_probe = mea.positions.mean(axis=0)
         center_dim_1 = np.dot(center_probe, mea.main_axes[0])
         center_dim_2 = np.dot(center_probe, mea.main_axes[1])
 
-        minmin, maxmax = [2*np.min([min_dim_1 + center_dim_1, min_dim_2 + center_dim_2]),
-                          2*np.max([max_dim_1 +  center_dim_1, max_dim_2 + center_dim_2])]
+        min_dim_1c = np.min(np.dot(mea.positions-center_probe, mea.main_axes[0]))
+        min_dim_2c = np.min(np.dot(mea.positions-center_probe, mea.main_axes[1]))
+        max_dim_1c = np.max(np.dot(mea.positions-center_probe, mea.main_axes[0]))
+        max_dim_2c = np.max(np.dot(mea.positions-center_probe, mea.main_axes[1]))
+        minmin, maxmax = [2*np.min([min_dim_1c, min_dim_2c]),
+                          2*np.max([max_dim_1c, max_dim_2c])]
 
         if type == 'shank':
             probe_height = 200
             probe_top = (max_dim_2 + probe_height) * mea.main_axes[1]
-            probe_bottom = (min_dim_1 - probe_height) * mea.main_axes[1]
+            probe_bottom = (min_dim_2 - probe_height) * mea.main_axes[1]
             probe_corner = (min_dim_2 - 0.1 * probe_height) * mea.main_axes[1]
-            probe_left = (min_dim_1 - 0.1 * probe_height) * mea.main_axes[0]
-            probe_right = (max_dim_1 + 0.1 * probe_height) * mea.main_axes[0]
+            probe_center_bottom = center_dim_1 * mea.main_axes[0]
+
 
             verts = np.array([
                 (min_dim_1 - 2 * mea.size) * mea.main_axes[0] + probe_top,  # left, bottom
                 (min_dim_1 - 2 * mea.size) * mea.main_axes[0] + probe_corner,  # left, top
-                probe_bottom,  # right, top
+                center_dim_1 * mea.main_axes[0] + probe_bottom,  # right, top
                 (max_dim_1 + 2 * mea.size) * mea.main_axes[0] + probe_corner,  # right, bottom
                 (max_dim_1 + 2 * mea.size) * mea.main_axes[0] + probe_top,
             ])
+
         elif type == 'planar':
             verts = np.array([
                 (min_dim_1 - 3 * mea.size) * mea.main_axes[0] + (max_dim_2 + 3 * mea.size) * mea.main_axes[1],  # left, bottom
@@ -223,7 +228,7 @@ def plot_probe_3d(mea, alpha=.5, ax=None, xlim=None, ylim=None, zlim=None, top=1
                 (max_dim_1 + 3 * mea.size) * mea.main_axes[0] + (max_dim_2 + 3 * mea.size) * mea.main_axes[1],
             ])
 
-        verts += center_probe
+        # verts += center_probe
         r = Poly3DCollection([verts])
         alpha = (0.3,)
         mea_col = mpl_colors.to_rgb('g') + alpha
@@ -446,9 +451,9 @@ def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, s
     # normalize to min peak
     if vscale is None:
         signalmin = 1.5*np.max(np.abs(signals))
-        spike_norm = signals / signalmin * mea_pitch[1]
+        signals_norm = signals / signalmin * mea_pitch[1]
     else:
-        spike_norm = signals / vscale * mea_pitch[1]
+        signals_norm = signals / vscale * mea_pitch[1]
 
     if colors is None:
         if len(signals.shape) > 2:
@@ -460,8 +465,8 @@ def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, s
     for el in range(number_electrodes):
         if len(signals.shape) == 3:  # multiple
             if points:
-                for sp_i, sp in enumerate(spike_norm):
-                    if len(colors) >= len(spike_norm) and len(colors) > 1:
+                for sp_i, sp in enumerate(signals_norm):
+                    if len(colors) >= len(signals_norm) and len(colors) > 1:
                         print(colors[sp_i])
                         ax.plot(np.linspace(0, mea_pitch[0]-spacing, signals.shape[2]) + mea_pos[el, 0],
                                 np.transpose(sp[el, :]) +  mea_pos[el, 1], linestyle='-', marker='o', ms=2, lw=lw,
@@ -473,7 +478,7 @@ def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, s
                                 mea_pos[el, 1], linestyle='-', marker='o', ms=2, lw=lw, color=colors,
                                 label='EAP ' + str(sp_i + 1))
             else:
-                for sp_i, sp in enumerate(spike_norm):
+                for sp_i, sp in enumerate(signals_norm):
                     if len(colors) > 1:
                         ax.plot(np.linspace(0, mea_pitch[0]-spacing, signals.shape[2]) + mea_pos[el, 0],
                                 np.transpose(sp[el, :]) + mea_pos[el, 1], lw=lw, color=colors[np.mod(sp_i, len(colors))],
@@ -485,10 +490,10 @@ def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, s
 
         else:
             if points:
-                ax.plot(np.linspace(0, mea_pitch[0]-spacing, signals.shape[1]) + mea_pos[el, 0], spike_norm[el, :]
+                ax.plot(np.linspace(0, mea_pitch[0]-spacing, signals.shape[1]) + mea_pos[el, 0], signals_norm[el, :]
                         + mea_pos[el, 1], color=colors, linestyle='-', marker='o', ms=2, lw=lw)
             else:
-                ax.plot(np.linspace(0, mea_pitch[0]-spacing, signals.shape[1]) + mea_pos[el, 0], spike_norm[el, :] +
+                ax.plot(np.linspace(0, mea_pitch[0]-spacing, signals.shape[1]) + mea_pos[el, 0], signals_norm[el, :] +
                         mea_pos[el, 1], color=colors, lw=lw)
 
         # ax.set_ylim([np.min(signals), np.max(signals)])
@@ -523,13 +528,13 @@ def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, s
     return ax
 
 
-def play_mea_recording(rec, mea, fs, window=1, step=0.1, colors=None, lw=1, ax=None, fig=None, spacing=None,
+def play_mea_recording(signals, mea, fs, window=1, step=0.1, colors=None, lw=1, ax=None, fig=None, spacing=None,
                        scalebar=False, time=None, dt=None, vscale=None, spikes=None, repeat=False, interval=10):
     '''
 
     Parameters
     ----------
-    rec
+    signals
     mea
     fs
     window
@@ -555,7 +560,7 @@ def play_mea_recording(rec, mea, fs, window=1, step=0.1, colors=None, lw=1, ax=N
 
     n_window = int(fs * window)
     n_step = int(fs * step)
-    start = np.arange(0, rec.shape[1], n_step)
+    start = np.arange(0, signals.shape[1], n_step)
 
     mea_pos = np.array([np.dot(mea.positions, mea.main_axes[0]), np.dot(mea.positions, mea.main_axes[1])]).T
     mea_pitch = [np.max(np.diff(mea_pos[:, 0])), np.max(np.diff(mea_pos[:, 1]))]
@@ -573,13 +578,13 @@ def play_mea_recording(rec, mea, fs, window=1, step=0.1, colors=None, lw=1, ax=N
 
     # normalize to min peak
     if vscale is None:
-        LFPmin = 1.5 * np.max(np.abs(rec))
-        rec_norm = rec / LFPmin * mea_pitch[1]
+        signalmin = 1.5*np.max(np.abs(signals))
+        signals_norm = signals / signalmin * mea_pitch[1]
     else:
-        rec_norm = rec / float(vscale) * mea_pitch[1]
+        signals_norm = signals / vscale * mea_pitch[1]
 
     if colors is None:
-        if len(rec.shape) > 2:
+        if len(signals.shape) > 2:
             colors = plt.rcParams['axes.color_cycle']
         else:
             colors = 'k'
@@ -587,7 +592,7 @@ def play_mea_recording(rec, mea, fs, window=1, step=0.1, colors=None, lw=1, ax=N
     number_electrodes = mea.number_electrodes
     lines = []
     for el in range(number_electrodes):
-        if len(rec.shape) == 3:  # multiple
+        if len(signals.shape) == 3:  # multiple
             raise Exception('Dimensions should be Nchannels x Nsamples')
         else:
             line, = ax.plot(np.linspace(0, mea_pitch[0] - spacing, n_window) + mea_pos[el, 0],
@@ -602,13 +607,13 @@ def play_mea_recording(rec, mea, fs, window=1, step=0.1, colors=None, lw=1, ax=N
     ax.axis('off')
 
     def update(i):
-        if n_window + i < rec.shape[1]:
+        if n_window + i < signals.shape[1]:
             for el in range(number_electrodes):
-                lines[el].set_ydata(rec_norm[el, i:n_window + i] + mea_pos[el, 1])
+                lines[el].set_ydata(signals_norm[el, i:n_window + i] + mea_pos[el, 1])
         else:
             for el in range(number_electrodes):
-                lines[el].set_ydata(np.pad(rec_norm[el, i:],
-                                           (0, n_window - (rec.shape[1] - i)), 'constant') + mea_pos[el, 1])
+                lines[el].set_ydata(np.pad(signals_norm[el, i:],
+                                           (0, n_window - (signals.shape[1] - i)), 'constant') + mea_pos[el, 1])
 
         text.set_text('Time: ' + str(round(i / float(fs), 1)) + ' s')
 

@@ -1,21 +1,29 @@
 import pytest
 import numpy as np
-import MEAutility as MEA
+import MEAutility as mu
 
 def test_plot_probe():
-    pass
+    mea = mu.return_mea('Neuronexus-32')
+    ax = mu.plot_probe(mea)
 
 def test_plot_probe_3d():
-    pass
+    mea = mu.return_mea('Neuronexus-32')
+    ax = mu.plot_probe_3d(mea)
 
 def test_plot_v_image():
-    pass
+    mea = mu.return_mea('Neuronexus-32')
+    ax = mu.plot_v_image(mea, offset=30, y_bound=[-100, 100], z_bound=[-100, 100])
 
 def test_plot_v_surf():
-    pass
+    mea = mu.return_mea('Neuronexus-32')
+    ax = mu.plot_v_surf(mea, offset=30, y_bound=[-100, 100], z_bound=[-100, 100])
 
 def test_plot_mea_recording():
-    pass
+    mea = mu.return_mea('Neuronexus-32')
+    rec = np.random.randn(32, 500)
+    ax = mu.plot_mea_recording(rec, mea)
 
 def test_play_mea_recording():
-    pass
+    mea = mu.return_mea('Neuronexus-32')
+    rec = np.random.randn(32, 500)
+    ax = mu.play_mea_recording(rec, mea, fs=32000)

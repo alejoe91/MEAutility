@@ -97,7 +97,6 @@ class Electrode:
                     stim_points = []
                     spl = 0
                     for p in np.arange(npoints):
-                        # print(p)
                         placed = False
                         if self.shape == 'square':
                             if main_axes is None:
@@ -110,7 +109,6 @@ class Electrode:
                                 point = np.cross(arr_rot, self.normal)  # + self.position
                                 if np.abs(np.dot(point, main_axes[0])) < self.size and \
                                         np.abs(np.dot(point, main_axes[1])) < self.size:
-                                    # print(point)
                                     placed = True
                                     stim_points.append(point + self.position)
                         else:
@@ -119,8 +117,7 @@ class Electrode:
                                 M = np.array([main_axes[0], main_axes[1], self.normal])
                                 arr_rot = np.dot(M.T, arr)
                                 point = np.cross(arr_rot, self.normal)
-                                if np.linalg.norm(point - self.position) < self.size:
-                                    # print(point)
+                                if np.linalg.norm(point) < self.size:
                                     placed = True
                                     stim_points.append(point + self.position)
 
@@ -141,7 +138,6 @@ class Electrode:
             else:
                 potential = 0
         elif isinstance(self.current, (list, np.ndarray)):
-            # print("Current is array")
             potential = np.zeros(len(self.current))
             for i, c in enumerate(self.current):
                 if c != 0:
@@ -160,7 +156,6 @@ class Electrode:
                     else:
                         stim_points = []
                         for p in np.arange(npoints):
-                            # print(p)
                             placed = False
                             if self.shape == 'square':
                                 if main_axes is None:
@@ -173,7 +168,6 @@ class Electrode:
                                     point = np.cross(arr_rot, self.normal) # + self.position
                                     if np.abs(np.dot(point, main_axes[0])) < self.size and \
                                             np.abs(np.dot(point, main_axes[1])) < self.size:
-                                        # print(point)
                                         placed=True
                                         stim_points.append(point + self.position)
                             else:
@@ -181,7 +175,6 @@ class Electrode:
                                     arr = (2 * self.size) * np.random.rand(3) - self.size
                                     point = np.cross(arr, self.normal) + self.position
                                     if np.linalg.norm(point - self.position) < self.size:
-                                        # print(point)
                                         placed=True
                                         stim_points.append(point)
 
@@ -550,7 +543,6 @@ class MEA(object):
                         stim_points = []
                         cur_point = points[pp]
                         for ii in np.arange(self.number_electrodes):
-                            # print("Computing electrode: ", ii + 1)
                             vs, sp = self.electrodes[ii].field_contribution(cur_point, npoints=self.points_per_electrode,
                                                                          model=self.model, main_axes=self.main_axes)
                             pf += vs
@@ -567,7 +559,6 @@ class MEA(object):
                         stim_points = []
                         cur_point = points[pp]
                         for ii in np.arange(self.number_electrodes):
-                            # print("Computing electrode: ", ii + 1)
                             vs, sp = self.electrodes[ii].field_contribution(cur_point, npoints=self.points_per_electrode,
                                                                             model=self.model, main_axes=self.main_axes,
                                                                             seed=seed)
@@ -596,7 +587,7 @@ class MEA(object):
                 print('Error: number of currents in file different than number of electrodes')
             else:
                 print('Currents loaded successfully from file ', filename)
-                self.currents(currents)
+                self.currents = currents
         else:
             print('File does not exist')
 
