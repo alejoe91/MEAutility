@@ -955,7 +955,7 @@ def return_mea(electrode_name=None, info=None):
         electrode_path = os.path.join(this_dir, "electrodes")
         if os.path.isfile(os.path.join(electrode_path, electrode_name + '.yaml')):
             with open(os.path.join(electrode_path, electrode_name + '.yaml')) as meafile:
-                elinfo = yaml.load(meafile)
+                elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
             pos = get_positions(elinfo)
             # create MEA object
             if check_if_rect(elinfo):
@@ -965,7 +965,7 @@ def return_mea(electrode_name=None, info=None):
             return mea
         elif os.path.isfile(os.path.join(electrode_path, electrode_name + '.yml')):
             with open(os.path.join(electrode_path, electrode_name + '.yml')) as meafile:
-                elinfo = yaml.load(meafile)
+                elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
             pos = get_positions(elinfo)
             # create MEA object
             if check_if_rect(elinfo):
@@ -1015,11 +1015,11 @@ def return_mea_info(electrode_name=None):
         electrode_path = os.path.join(this_dir, "electrodes")
         if os.path.isfile(os.path.join(electrode_path, electrode_name + '.yaml')):
             with open(os.path.join(electrode_path, electrode_name + '.yaml')) as meafile:
-                elinfo = yaml.load(meafile)
+                elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
             return elinfo
         elif os.path.isfile(os.path.join(electrode_path, electrode_name + '.yml')):
             with open(os.path.join(electrode_path, electrode_name + '.yml')) as meafile:
-                elinfo = yaml.load(meafile)
+                elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
             return elinfo
         else:
             print("MEA model named %s not found" % electrode_name)
@@ -1055,7 +1055,7 @@ def add_mea(mea_yaml_path):
 
     if path.endswith('.yaml') or path.endswith('.yml') and os.path.isfile(path):
         with open(path, 'r') as meafile:
-            elinfo = yaml.load(meafile)
+            elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
             if 'pos' not in elinfo.keys():
                 if 'dim' in elinfo.keys():
                     if elinfo['dim'] != 1 and 'pitch' not in elinfo.keys():
