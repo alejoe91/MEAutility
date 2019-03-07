@@ -16,6 +16,12 @@ import os.path
 import copy
 import yaml
 import shutil
+from distutils.version import StrictVersion
+
+if StrictVersion(yaml.__version__) >= StrictVersion('5.0.0'):
+    use_loader = True
+else:
+    use_loader = False
 
 class Electrode:
     def __init__(self, position=None, normal=None, current=None, sigma=None, max_field=None, shape=None, size=None):
@@ -955,7 +961,10 @@ def return_mea(electrode_name=None, info=None):
         electrode_path = os.path.join(this_dir, "electrodes")
         if os.path.isfile(os.path.join(electrode_path, electrode_name + '.yaml')):
             with open(os.path.join(electrode_path, electrode_name + '.yaml')) as meafile:
-                elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
+                if use_loader:
+                    elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
+                else:
+                    elinfo = yaml.load(meafile)
             pos = get_positions(elinfo)
             # create MEA object
             if check_if_rect(elinfo):
@@ -965,7 +974,10 @@ def return_mea(electrode_name=None, info=None):
             return mea
         elif os.path.isfile(os.path.join(electrode_path, electrode_name + '.yml')):
             with open(os.path.join(electrode_path, electrode_name + '.yml')) as meafile:
-                elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
+                if use_loader:
+                    elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
+                else:
+                    elinfo = yaml.load(meafile)
             pos = get_positions(elinfo)
             # create MEA object
             if check_if_rect(elinfo):
@@ -1015,11 +1027,17 @@ def return_mea_info(electrode_name=None):
         electrode_path = os.path.join(this_dir, "electrodes")
         if os.path.isfile(os.path.join(electrode_path, electrode_name + '.yaml')):
             with open(os.path.join(electrode_path, electrode_name + '.yaml')) as meafile:
-                elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
+                if use_loader:
+                    elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
+                else:
+                    elinfo = yaml.load(meafile)
             return elinfo
         elif os.path.isfile(os.path.join(electrode_path, electrode_name + '.yml')):
             with open(os.path.join(electrode_path, electrode_name + '.yml')) as meafile:
-                elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
+                if use_loader:
+                    elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
+                else:
+                    elinfo = yaml.load(meafile)
             return elinfo
         else:
             print("MEA model named %s not found" % electrode_name)
@@ -1055,7 +1073,10 @@ def add_mea(mea_yaml_path):
 
     if path.endswith('.yaml') or path.endswith('.yml') and os.path.isfile(path):
         with open(path, 'r') as meafile:
-            elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
+            if use_loader:
+                elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
+            else:
+                elinfo = yaml.load(meafile)
             if 'pos' not in elinfo.keys():
                 if 'dim' in elinfo.keys():
                     if elinfo['dim'] != 1 and 'pitch' not in elinfo.keys():
