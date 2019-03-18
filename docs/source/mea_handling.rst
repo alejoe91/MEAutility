@@ -29,11 +29,6 @@ First, let's instantiate a MEA object among the available MEAs:
     _ = plt.axis('equal')
 
 
-.. parsed-literal::
-
-    'plane' field with 2D dimensions assumed to be 'yz
-    Model is set to semi
-
 
 
 .. image:: mea_handling_files/mea_handling_5_1.png

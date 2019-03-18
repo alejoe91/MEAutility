@@ -31,11 +31,6 @@ First, let's instantiate a MEA object among the available MEA models:
     sqmea = MEA.return_mea('SqMEA-10-15um')
 
 
-.. parsed-literal::
-
-    'plane' field with 2D dimensions assumed to be 'yz
-    Model is set to semi
-
 
 By default, the stimulation ``model`` is set to ``semi``. This is the
 default for MEA objects of type ``mea`` and it models that currents
@@ -399,12 +394,6 @@ Let's take a look at an example:
     reduced_points = points[:10]
 
 
-.. parsed-literal::
-
-    'plane' field with 2D dimensions assumed to be 'yz
-    Model is set to semi
-
-
 .. code-block:: python
 
     sqmea_r.points_per_electrode = 100
@@ -464,12 +453,6 @@ with 2 pulses:
     bipolar_source[65:75] = -10000
     
     _ = plt.plot(bipolar_source)
-
-
-.. parsed-literal::
-
-    'plane' field with 2D dimensions assumed to be 'yz
-    Model is set to semi
 
 
 

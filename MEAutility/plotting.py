@@ -484,7 +484,7 @@ def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, s
                                 np.transpose(sp[el, :]) + mea_pos[el, 1], lw=lw, color=colors[np.mod(sp_i, len(colors))],
                                 label='EAP '+str(sp_i+1))
                     elif len(colors) == 1:
-                        ax.plot(np.linspace(0, mea_pitch[0] - spacing, signals.shape[2]) + mea_pos[el, 1],
+                        ax.plot(np.linspace(0, mea_pitch[0] - spacing, signals.shape[2]) + mea_pos[el, 0],
                                 np.transpose(sp[el, :]) + mea_pos[el, 1], lw=lw, color=colors,
                                 label='EAP ' + str(sp_i + 1))
 
