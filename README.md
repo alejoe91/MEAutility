@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/alejoe91/MEAutility.svg?branch=master)](https://travis-ci.org/alejoe91/MEAutility)
+
 # MEAutility
 
 Python package for multi-electrode array (MEA) handling and stimulation.
