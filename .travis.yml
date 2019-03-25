@@ -11,6 +11,7 @@ deploy:
   provider: pypi
   user: alejoe91
   on:
+    branch: master
     tags: true
   password:
     secure: wtAc4HN7eInpLdibmvRrlzzvYpDlsz7tPjnZNEYgAqah00VlXDtjJAe0F3u0zCTgoEfWWLO42IYyrv7GUA4tQVjL0WwcDn6H0Mj4CZCIuzJGBLBA+37JFkyEyRdugqlkNagBRVUGm6trvs62I0jw+RMnl2Pc+AQR5BCtE0qTJ04tTxeu/b1MBvXmOjYqFK/21ElCI6uHZysunTLGYVa+SqIqjwEWQDG/jMstZznxRlz2zw+FLJW4lSRA/mGj5Yf0oZlOpk245/ECJGW1pyM9N204+CiTj/dsPP95wfR8JEowF1safsqarm4DNSwbdDxqYHafZErA+FH2wC2vCphGiSZI8rlPQj5NCWpGV2gq7gCalzAKCqrEPvofVHQtF+haQfI/YS6IR6NUfKmrQtNusG0aR70oTwNVEE8KRNd44bbQg48OEQPPEqj5wil1qM0r6ojtDuQXZLx5pbb8HPyXRkp1okKzwNLBSWaMvkrs9TyQi+C8cpWvsj8YXrgH6GoQPvDz+b+bqh3Q/1wimrYdOchVykCW/rP+N9dUuL6VZhqVojT3Cii9GwRv83+ZgrpIg/DpbB/mFX2ixbZIG+1//5pt40HD8rNAehMBVfF+nt5VVTPifL0uBwgl2Tb2RIs95FesZPRFN+YOdyl3MW1PIYTxbp8siHyAXvnZVX8hYIc=

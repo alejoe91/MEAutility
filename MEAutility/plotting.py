@@ -459,31 +459,30 @@ def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, s
         if len(signals.shape) > 2:
             colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
         else:
-            colors='k'
+            colors = 'k'
 
     number_electrodes = mea.number_electrodes
     for el in range(number_electrodes):
         if len(signals.shape) == 3:  # multiple
             if points:
                 for sp_i, sp in enumerate(signals_norm):
-                    if len(colors) >= len(signals_norm) and len(colors) > 1:
-                        print(colors[sp_i])
+                    if len(colors) == len(signals_norm) and len(colors) > 1:
                         ax.plot(np.linspace(0, mea_pitch[0]-spacing, signals.shape[2]) + mea_pos[el, 0],
                                 np.transpose(sp[el, :]) +  mea_pos[el, 1], linestyle='-', marker='o', ms=2, lw=lw,
                                 color=colors[np.mod(sp_i, len(colors))],
                                 label='EAP '+ str(sp_i+1))
-                    elif len(colors) == 1:
+                    else:
                         ax.plot(np.linspace(0, mea_pitch[0] - spacing, signals.shape[2]) + mea_pos[el, 0],
                                 np.transpose(sp[el, :]) +
                                 mea_pos[el, 1], linestyle='-', marker='o', ms=2, lw=lw, color=colors,
                                 label='EAP ' + str(sp_i + 1))
             else:
                 for sp_i, sp in enumerate(signals_norm):
-                    if len(colors) > 1:
+                    if len(colors) == len(signals_norm):
                         ax.plot(np.linspace(0, mea_pitch[0]-spacing, signals.shape[2]) + mea_pos[el, 0],
                                 np.transpose(sp[el, :]) + mea_pos[el, 1], lw=lw, color=colors[np.mod(sp_i, len(colors))],
                                 label='EAP '+str(sp_i+1))
-                    elif len(colors) == 1:
+                    else:
                         ax.plot(np.linspace(0, mea_pitch[0] - spacing, signals.shape[2]) + mea_pos[el, 0],
                                 np.transpose(sp[el, :]) + mea_pos[el, 1], lw=lw, color=colors,
                                 label='EAP ' + str(sp_i + 1))

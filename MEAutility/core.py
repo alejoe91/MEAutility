@@ -86,7 +86,7 @@ class Electrode:
         if seed is not None:
             np.random.seed(seed)
         potential, stim_points = [], []
-        if isinstance(self.current, (float, int)):
+        if isinstance(self.current, (float, int, np.float, np.integer)):
             if self.current != 0:
                 if npoints == 1:
                     stim_points = self.position
@@ -251,13 +251,6 @@ class MEA(object):
         else:
             self.model = 'semi'
 
-        if self.plane == 'xy':
-            self.main_axes = np.array([[1,0,0],[0,1,0]])
-        elif self.plane == 'yz':
-            self.main_axes = np.array([[0,1,0],[0,0,1]])
-        elif self.plane == 'xz':
-            self.main_axes = np.array([[1,0,0],[0,0,1]])
-
         # Assumption (electrodes on the same plane)
         if self.number_electrodes > 1:
             if normal is None:
@@ -275,11 +268,11 @@ class MEA(object):
         # print("Model is set to %s" % self.model)
 
         if self.plane == 'xy':
-            self.main_axes = np.array([[1,0,0],[0,1,0]])
+            self.main_axes = np.array([[1, 0, 0], [0, 1, 0]])
         elif self.plane == 'yz':
-            self.main_axes = np.array([[0,1,0],[0,0,1]])
+            self.main_axes = np.array([[0, 1, 0], [0, 0, 1]])
         elif self.plane == 'xz':
-            self.main_axes = np.array([[1,0,0],[0,0,1]])
+            self.main_axes = np.array([[1, 0, 0], [0, 0, 1]])
 
         self.electrodes = [Electrode(pos, normal=self.normal, sigma=self.sigma, shape=self.shape,
                                      size=self.size) for pos in positions]
@@ -316,7 +309,6 @@ class MEA(object):
             print("Index out of bound")
             return None
 
-
     def _set_positions(self, positions):
         '''
 
@@ -331,7 +323,6 @@ class MEA(object):
         for i, el in enumerate(self.electrodes):
             el.position = positions[i]
 
-
     def _set_normal(self, normal):
         '''
 
@@ -345,7 +336,6 @@ class MEA(object):
         '''
         for i, el in enumerate(self.electrodes):
             el.normal = normal/np.linalg.norm(normal)
-
 
     def _get_currents(self):
         '''
@@ -389,13 +379,11 @@ class MEA(object):
                 currents[i] = el.current
         return currents
 
-
     def _get_electrode_positions(self):
         pos = np.zeros((self.number_electrodes, 3))
         for i, el in enumerate(self.electrodes):
             pos[i, :] = el.position
         return pos
-
 
     def set_electrodes(self, electrodes):
         '''
@@ -411,7 +399,6 @@ class MEA(object):
         self.electrodes = electrodes
         self.number_electrodes = len(electrodes)
 
-
     def set_random_currents(self, mean=0, sd=1000):
         '''
 
@@ -425,7 +412,6 @@ class MEA(object):
         '''
         currents = sd * np.random.randn(self.number_electrodes) + mean
         self.currents = currents
-
 
     def set_currents(self, current_values):
         '''
@@ -447,7 +433,6 @@ class MEA(object):
         else:
             raise Exception("Current values should be a list or np.array with len=%d" % self.number_electrodes)
 
-
     def set_current(self, el_id, current_value):
         '''
 
@@ -459,19 +444,17 @@ class MEA(object):
         -------
 
         '''
-        if isinstance(current_value, (float, int)):
+        if isinstance(current_value, (float, int, np.float, np.integer)):
             self.electrodes[el_id].current = current_value
         elif isinstance(current_value, (list, np.ndarray)):
             for el_i, el in enumerate(self.electrodes):
                 if el_i == el_id:
                     el.current = np.array(current_value)
-                elif isinstance(el.current, (float, int)):
+                elif isinstance(el.current, (float, int, np.float, np.integer)):
                         el.current = np.array([el.current] * len(current_value))
                 elif isinstance(el.current, (list, np.ndarray)):
                     if len(el.current) != len(current_value):
                         el.current = np.array([el.current[0]] * len(current_value))
-
-
 
     def reset_currents(self, amp=None):
         '''
@@ -489,7 +472,6 @@ class MEA(object):
         else:
             currents = amp*np.ones(self.number_electrodes)
         self.currents = currents
-
 
     def compute_field(self, points, return_stim_points=False, seed=None, verbose=False):
         '''
@@ -514,7 +496,7 @@ class MEA(object):
                 print("Error: expected 3d point")
                 return
             else:
-                if isinstance(c, (float, int)):
+                if isinstance(c, (float, int, np.float, np.integer)):
                     vp = 0
                     stim_points = []
                     for ii in np.arange(self.number_electrodes):
@@ -540,7 +522,7 @@ class MEA(object):
                 print("Error: expected 3d points")
                 return
             else:
-                if isinstance(c, (float, int)):
+                if isinstance(c, (float, int, np.float, np.integer)):
                     vp = np.zeros(points.shape[0])
                     for pp in np.arange(len(vp)):
                         if verbose:
@@ -580,11 +562,9 @@ class MEA(object):
         else:
             return vp
 
-
     def save_currents(self, filename):
         np.save(filename, self.currents)
         print('Currents saved successfully to file ', filename)
-
 
     def load_currents(self, filename):
         if os.path.isfile(filename):
@@ -596,7 +576,6 @@ class MEA(object):
                 self.currents = currents
         else:
             print('File does not exist')
-
 
     def rotate(self, axis, theta):
         '''
@@ -624,7 +603,6 @@ class MEA(object):
         self._set_positions(rot_pos)
         self._set_normal(normal)
 
-
     def move(self, vector):
         '''
 
@@ -639,7 +617,6 @@ class MEA(object):
         '''
         move_pos = self.positions + vector
         self._set_positions(move_pos)
-
 
     def center(self):
         '''
@@ -675,7 +652,7 @@ class RectMEA(MEA):
             self.pitch = info['pitch']
         else:
             raise AttributeError("Rectangular MEA should have 'pitch' field in info")
-        if isinstance(self.dim, int):
+        if isinstance(self.dim, (int, np.integer)):
             self.dim = [self.dim, self.dim]
         if isinstance(self.pitch, (int, float)):
             self.pitch = [self.pitch, self.pitch]
@@ -690,7 +667,6 @@ class RectMEA(MEA):
             print("Index out of bound")
             return None
 
-
     def get_current_matrix(self):
         current_matrix = np.zeros(self.dim)
         for i in np.arange(0, self.dim[0]):
@@ -698,14 +674,12 @@ class RectMEA(MEA):
                 current_matrix[i, j] = self.currents[self.dim[0] * j + i]
         return current_matrix
 
-
     def get_electrode_matrix(self):
         electrode_matrix = np.empty(self.dim, dtype=object)
         for i in np.arange(0, self.dim[0]):
             for j in np.arange(0, self.dim[1]):
                 electrode_matrix[i, j] = self.electrodes[self.dim[0] * j + i]
         return electrode_matrix
-
 
     def set_current_matrix(self, currents):
         current_array = np.zeros((self.number_electrodes))
@@ -828,9 +802,9 @@ def get_positions(elinfo, center=True):
             else:
                 pitch = elinfo['pitch']
 
-            if isinstance(dim, int):
+            if isinstance(dim, (int, np.integer)):
                 dim = [dim, dim]
-            if isinstance(pitch, int) or isinstance(pitch, float):
+            if isinstance(pitch, (int, np.integer)) or isinstance(pitch, (float, np.float)):
                 pitch = [pitch, pitch]
             if len(dim) == 2:
                 d1 = np.array([])
@@ -841,7 +815,7 @@ def get_positions(elinfo, center=True):
                     stagger = None
                 for d_i in np.arange(dim[1]):
                     if stagger is not None:
-                        if isinstance(stagger, int) or isinstance(stagger, float):
+                        if isinstance(stagger, (int, np.integer)) or isinstance(stagger, (float, np.float)):
                             if np.mod(d_i, 2):
                                 d1new = np.arange(dim[0]) * pitch[0] + stagger
                             else:
@@ -877,7 +851,7 @@ def get_positions(elinfo, center=True):
                     stagger = None
                 for d_i, d in enumerate(dim):
                     if stagger is not None:
-                        if isinstance(stagger, int) or isinstance(stagger, float):
+                        if isinstance(stagger, (int, np.integer)) or isinstance(stagger, (float, np.float)):
                             if np.mod(d_i, 2):
                                 d1new = np.arange(d) * pitch[0] + stagger
                             else:
@@ -928,10 +902,11 @@ def get_positions(elinfo, center=True):
         print("Define either a list of positions 'pos' or 'dim' and 'pitch'")
         return None
 
+
 def check_if_rect(elinfo):
     if 'dim' in elinfo.keys():
         dim = elinfo['dim']
-        if isinstance(dim, int):
+        if isinstance(dim, (int, np.integer)):
             return True
         elif isinstance(dim, list):
             if len(dim) <= 2:
@@ -1005,6 +980,7 @@ def return_mea(electrode_name=None, info=None):
             mea = MEA(positions=pos, info=elinfo)
         return mea
 
+
 def return_mea_info(electrode_name=None):
     '''
 
@@ -1045,6 +1021,7 @@ def return_mea_info(electrode_name=None):
             electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
             print('Available MEA: \n', electrodes)
             return
+
 
 def return_mea_list():
     '''
@@ -1095,6 +1072,7 @@ def add_mea(mea_yaml_path):
         print('Available MEA: \n', electrodes)
         return
 
+
 def remove_mea(mea_name):
     '''Adds the mea design defined by the yaml file in the install folder
 
@@ -1144,18 +1122,18 @@ def rotation_matrix(axis, theta):
                      [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
                      [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
 
-
-if __name__ == '__main__':
-    # test
-    # elinfo = {'pos': [[10,25],[10,-5],[10,5],[10,-25]]}
-    import matplotlib.pylab as plt
-    elinfo = {'dim': [10, 3], 'pitch': [10, 30]}
-    pos = get_positions(elinfo)
-
-    mea = return_mea(info=elinfo)
-    gpos = mea.positions
-    print(pos)
-
-    plt.plot(pos[:,1], pos[:,2], '*')
-    plt.plot(gpos[:,1], gpos[:,2], '*')
-    plt.axis('equal')
+#
+# if __name__ == '__main__':
+#     # test
+#     # elinfo = {'pos': [[10,25],[10,-5],[10,5],[10,-25]]}
+#     import matplotlib.pylab as plt
+#     elinfo = {'dim': [10, 3], 'pitch': [10, 30]}
+#     pos = get_positions(elinfo)
+#
+#     mea = return_mea(info=elinfo)
+#     gpos = mea.positions
+#     print(pos)
+#
+#     plt.plot(pos[:,1], pos[:,2], '*')
+#     plt.plot(gpos[:,1], gpos[:,2], '*')
+#     plt.axis('equal')
