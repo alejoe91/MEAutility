@@ -9,6 +9,8 @@ def test_plot_probe():
 def test_plot_probe_3d():
     mea = mu.return_mea('Neuronexus-32')
     ax = mu.plot_probe_3d(mea)
+    mea = mu.return_mea('SqMEA-10-15um')
+    ax = mu.plot_probe_3d(mea, ax=ax, type='planar', color_currents=True)
 
 def test_plot_v_image():
     mea = mu.return_mea('Neuronexus-32')
