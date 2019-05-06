@@ -1,0 +1,8 @@
+electrode_name: Neuropixels-64
+sortlist: null
+pitch: [40.0, 16.0]
+dim: [16, 4]
+stagger: 20
+size: 6.0
+shape: square
+type: mea
