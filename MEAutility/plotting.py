@@ -433,7 +433,7 @@ def plot_v_surf(mea, v_plane=None, x_bound=None, y_bound=None, z_bound=None, off
 
 
 def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, spacing=None,
-                       scalebar=False, time=None, dt=None, vscale=None):
+                       scalebar=False, time=None, dt=None, vscale=None, hide_axis=True):
     '''
 
     Parameters
@@ -461,6 +461,11 @@ def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, s
 
     if spacing is None:
         spacing = 0.1*np.max(mea_pitch)
+
+    if mea_pitch[0] == 0:
+        mea_pitch[0] = spacing + 1
+    if mea_pitch[1] == 0:
+        mea_pitch[1] = spacing + 1
 
     # normalize to min peak
     if vscale is None:
@@ -514,9 +519,10 @@ def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, s
                         mea_pos[el, 1], color=colors, lw=lw)
 
         # ax.set_ylim([np.min(signals), np.max(signals)])
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.axis('off')
+        if hide_axis:
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.axis('off')
 
     if scalebar:
         if dt is None and time is None:
