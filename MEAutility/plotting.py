@@ -206,6 +206,7 @@ def plot_probe_3d(mea, ax=None, xlim=None, ylim=None, zlim=None, top=None, botto
 
         center_dim_1 = np.dot(center_probe, mea.main_axes[0])
         center_dim_2 = np.dot(center_probe, mea.main_axes[1])
+        center_dim_3 = center_probe * np.abs(mea.normal)
 
         min_dim_1c = np.min(np.dot(mea.positions-center_probe, mea.main_axes[0]))
         min_dim_2c = np.min(np.dot(mea.positions-center_probe, mea.main_axes[1]))
@@ -228,20 +229,26 @@ def plot_probe_3d(mea, ax=None, xlim=None, ylim=None, zlim=None, top=None, botto
             probe_center_bottom = center_dim_1 * mea.main_axes[0]
 
             verts = np.array([
-                (min_dim_1 - 2 * mea.size) * mea.main_axes[0] + probe_top,  # left, bottom
-                (min_dim_1 - 2 * mea.size) * mea.main_axes[0] + probe_corner,  # left, top
-                center_dim_1 * mea.main_axes[0] + probe_bottom,  # right, top
-                (max_dim_1 + 2 * mea.size) * mea.main_axes[0] + probe_corner,  # right, bottom
-                (max_dim_1 + 2 * mea.size) * mea.main_axes[0] + probe_top,
+                (min_dim_1 - 2 * mea.size) * mea.main_axes[0] + probe_top + center_dim_3,  # left, bottom
+                (min_dim_1 - 2 * mea.size) * mea.main_axes[0] + probe_corner + center_dim_3,  # left, top
+                center_dim_1 * mea.main_axes[0] + probe_bottom + center_dim_3,  # right, top
+                (max_dim_1 + 2 * mea.size) * mea.main_axes[0] + probe_corner + center_dim_3,  # right, bottom
+                (max_dim_1 + 2 * mea.size) * mea.main_axes[0] + probe_top + center_dim_3,
             ])
 
         elif type == 'planar':
             verts = np.array([
-                (min_dim_1 - 3 * mea.size) * mea.main_axes[0] + (max_dim_2 + 3 * mea.size) * mea.main_axes[1],  # left, bottom
-                (min_dim_1 - 3 * mea.size) * mea.main_axes[0] + (min_dim_2 - 3 * mea.size) * mea.main_axes[1],
-                (max_dim_1 + 3 * mea.size) * mea.main_axes[0] + (min_dim_2 - 3 * mea.size) * mea.main_axes[1],
-                (max_dim_1 + 3 * mea.size) * mea.main_axes[0] + (max_dim_2 + 3 * mea.size) * mea.main_axes[1],
+                (min_dim_1 - 3 * mea.size) * mea.main_axes[0] + (max_dim_2 + 3 * mea.size) * mea.main_axes[1]
+                + center_dim_3,  # left, bottom
+                (min_dim_1 - 3 * mea.size) * mea.main_axes[0] + (min_dim_2 - 3 * mea.size) * mea.main_axes[1]
+                + center_dim_3,
+                (max_dim_1 + 3 * mea.size) * mea.main_axes[0] + (min_dim_2 - 3 * mea.size) * mea.main_axes[1]
+                + center_dim_3,
+                (max_dim_1 + 3 * mea.size) * mea.main_axes[0] + (max_dim_2 + 3 * mea.size) * mea.main_axes[1]
+                + center_dim_3,
             ])
+        else:
+            raise AttributeError("'type' can be 'planar' or 'shank'")
 
         # verts += center_probe
         r = Poly3DCollection([verts])
