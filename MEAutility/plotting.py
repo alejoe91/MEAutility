@@ -531,6 +531,8 @@ def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, s
             ax.set_yticks([])
             ax.axis('off')
 
+    ax.set_xlim([np.min(mea_pos[:, 0]) -(mea_pitch[0]-spacing)/2., np.max(mea_pos[:, 0]) + (mea_pitch[0]-spacing)/2.])
+
     if scalebar:
         if dt is None and time is None:
             raise AttributeError('Pass either dt or time in the argument')

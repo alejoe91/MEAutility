@@ -23,6 +23,7 @@ if StrictVersion(yaml.__version__) >= StrictVersion('5.0.0'):
 else:
     use_loader = False
 
+
 class Electrode:
     def __init__(self, position=None, normal=None, current=None, sigma=None, max_field=None, shape=None, size=None):
         '''
@@ -203,10 +204,9 @@ class Electrode:
 
 
 class MEA(object):
-    '''This class handles properties and stimulation of general multi-electrode arrays
-    '''
     def __init__(self, positions, info, normal=None, points_per_electrode=None, sigma=None):
         '''
+        Intantiates a MEA object
 
         Parameters
         ----------
@@ -214,6 +214,7 @@ class MEA(object):
         info
         model
         sigma
+
         '''
         self.number_electrodes = len(positions)
         if sigma == None:
@@ -692,16 +693,51 @@ class RectMEA(MEA):
         return self.dim[0] * j + i
 
 
-def add_3dim(pos2d, plane, offset=None):
+def rotation_matrix(axis, theta):
     '''
+    Returns 3D rotation matrix.
 
     Parameters
     ----------
-    plane
+    axis: np.array or list
+        3D axis of rotation
+    theta: float
+        Angle in radiants for rotation anti-clockwise
 
     Returns
     -------
+    R: np.array
+        2D rotation matrix
+    '''
+    axis = np.asarray(axis)
+    theta = np.asarray(theta)
+    axis = axis / np.linalg.norm(axis)
+    a = np.cos(theta / 2.0)
+    b, c, d = -axis * np.sin(theta / 2.0)
+    aa, bb, cc, dd = a * a, b * b, c * c, d * d
+    bc, ad, ac, ab, bd, cd = b * c, a * d, a * c, a * b, b * d, c * d
+    return np.array([[aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
+                     [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
+                     [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
 
+
+def add_3dim(pos2d, plane, offset=0):
+    '''
+    Adds the 3rd dimension to an array of 2D positions.
+
+    Parameters
+    ----------
+    pos2d: np.array
+        Array with 2d position (n_elec, 2)
+    plane: str
+        'xy', 'yz', or 'xz'
+    offset: float
+        Offset in the 3rd dimension
+
+    Returns
+    -------
+    pos: np.array
+        Array with 3d positions
     '''
     nelec = pos2d.shape[0]
     if plane == 'xy':
@@ -716,31 +752,36 @@ def add_3dim(pos2d, plane, offset=None):
 
 def center_mea(pos):
     '''
+    Centers MEA positions to (0,0,0)
 
     Parameters
     ----------
-    pos
+    pos: np.array
+        3d positions
 
     Returns
     -------
-
+    pos_centered: np.array
+        Centered 3d positions
     '''
     return pos - np.mean(pos, axis=0, keepdims=True)
 
 
 def get_positions(elinfo, center=True):
-    '''Computes the positions of the elctrodes based on the elinfo
+    '''
+    Computes the positions of the elctrodes based on the elinfo
 
     Parameters
     ----------
     elinfo: dict
         Contains electrode information from yaml file (dim, pitch, sortlist, plane, pos)
+    center: bool
+        If True, MEA barycenter is (0,0,0)
 
     Returns
     -------
     positions: np.array
         3d points with the centers of the electrodes
-
     '''
     electrode_pos = False
     # method 1: positions in elinfo
@@ -904,6 +945,19 @@ def get_positions(elinfo, center=True):
 
 
 def check_if_rect(elinfo):
+    '''
+    Checks if MEA definition is rectangular.
+
+    Parameters
+    ----------
+    elinfo: dict
+        Probe info
+
+    Returns
+    -------
+    rect: bool
+        True if it's rectangular
+    '''
     if 'dim' in elinfo.keys():
         dim = elinfo['dim']
         if isinstance(dim, (int, np.integer)):
@@ -916,57 +970,44 @@ def check_if_rect(elinfo):
 
 def return_mea(electrode_name=None, info=None):
     '''
+    Returns MEA object.
 
     Parameters
     ----------
-    electrode_name
+    electrode_name: str
+        Probe name
+    info: dict
+        Probe info (alternative to electrode_name)
 
     Returns
     -------
-
+    mea: MEA
+        The MEA object
     '''
+    mea = None
     if electrode_name is None and info is None:
-        this_dir, this_filename = os.path.split(__file__)
-        electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
-        print('Available MEA: \n', electrodes)
-        return
+        return_mea_list()
     elif electrode_name is not None:
         # load MEA info
         this_dir, this_filename = os.path.split(__file__)
-        electrode_path = os.path.join(this_dir, "electrodes")
-        if os.path.isfile(os.path.join(electrode_path, electrode_name + '.yaml')):
-            with open(os.path.join(electrode_path, electrode_name + '.yaml')) as meafile:
-                if use_loader:
-                    elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
-                else:
-                    elinfo = yaml.load(meafile)
-            pos = get_positions(elinfo)
-            # create MEA object
-            if check_if_rect(elinfo):
-                mea = RectMEA(positions=pos, info=elinfo)
-            else:
-                mea = MEA(positions=pos, info=elinfo)
-            return mea
-        elif os.path.isfile(os.path.join(electrode_path, electrode_name + '.yml')):
-            with open(os.path.join(electrode_path, electrode_name + '.yml')) as meafile:
-                if use_loader:
-                    elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
-                else:
-                    elinfo = yaml.load(meafile)
-            pos = get_positions(elinfo)
-            # create MEA object
-            if check_if_rect(elinfo):
-                mea = RectMEA(positions=pos, info=elinfo)
-            else:
-                mea = MEA(positions=pos, info=elinfo)
-            return mea
-        else:
+        for f in os.listdir(os.path.join(this_dir, "electrodes")):
+            if '.yml' in f or '.yaml' in f:
+                with open(os.path.join(this_dir, "electrodes", f)) as meafile:
+                    if use_loader:
+                        elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
+                    else:
+                        elinfo = yaml.load(meafile)
+                    if elinfo['electrode_name'] == electrode_name:
+                        pos = get_positions(elinfo)
+                        # create MEA object
+                        if check_if_rect(elinfo):
+                            mea = RectMEA(positions=pos, info=elinfo)
+                        else:
+                            mea = MEA(positions=pos, info=elinfo)
+        if mea is None:
             print("MEA model named %s not found" % electrode_name)
-            this_dir, this_filename = os.path.split(__file__)
-            electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
-            print('Available MEA: \n', electrodes)
-            return
-    elif info is not None:
+            print("Available models:", return_mea_list())
+    else:
         elinfo = info
         if 'center' in elinfo.keys():
             center = elinfo['center']
@@ -978,73 +1019,76 @@ def return_mea(electrode_name=None, info=None):
             mea = RectMEA(positions=pos, info=elinfo)
         else:
             mea = MEA(positions=pos, info=elinfo)
-        return mea
+    return mea
 
 
 def return_mea_info(electrode_name=None):
     '''
+    Returns probe information.
 
     Parameters
     ----------
-    electrode_name
+    electrode_name: str
+        Probe name
 
     Returns
     -------
-
+    info: dict
+        Dictionary with electrode info
     '''
+    info = None
     if electrode_name is None:
-        this_dir, this_filename = os.path.split(__file__)
-        electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
-        print('Available MEA: \n', electrodes)
-        return
+        return_mea_list()
     else:
         # load MEA info
         this_dir, this_filename = os.path.split(__file__)
         electrode_path = os.path.join(this_dir, "electrodes")
-        if os.path.isfile(os.path.join(electrode_path, electrode_name + '.yaml')):
-            with open(os.path.join(electrode_path, electrode_name + '.yaml')) as meafile:
-                if use_loader:
-                    elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
-                else:
-                    elinfo = yaml.load(meafile)
-            return elinfo
-        elif os.path.isfile(os.path.join(electrode_path, electrode_name + '.yml')):
-            with open(os.path.join(electrode_path, electrode_name + '.yml')) as meafile:
-                if use_loader:
-                    elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
-                else:
-                    elinfo = yaml.load(meafile)
-            return elinfo
-        else:
+        this_dir, this_filename = os.path.split(__file__)
+        mea = False
+        for f in os.listdir(os.path.join(this_dir, "electrodes")):
+            if '.yml' in f or '.yaml' in f:
+                with open(os.path.join(this_dir, "electrodes", f)) as meafile:
+                    if use_loader:
+                        elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
+                    else:
+                        elinfo = yaml.load(meafile)
+                    if elinfo['electrode_name'] == electrode_name:
+                        info = elinfo
+        if info is None:
             print("MEA model named %s not found" % electrode_name)
-            this_dir, this_filename = os.path.split(__file__)
-            electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
-            print('Available MEA: \n', electrodes)
-            return
+            print("Available models:", return_mea_list())
+    return info
 
 
 def return_mea_list():
     '''
+    Returns available probe models.
 
     Returns
     -------
-
+    probes: list
+        List of available probe_names
     '''
     this_dir, this_filename = os.path.split(__file__)
-    electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
-    return electrodes
+    electrode_names = []
+    for f in os.listdir(os.path.join(this_dir, "electrodes")):
+        with open(os.path.join(this_dir, "electrodes", f)) as meafile:
+            if use_loader:
+                elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
+            else:
+                elinfo = yaml.load(meafile)
+            electrode_names.append(elinfo['electrode_name'])
+    return sorted(electrode_names)
 
 
 def add_mea(mea_yaml_path):
-    '''Adds the mea design defined by the yaml file in the install folder
+    '''
+    Adds the mea probe defined by the yaml file in the installation folder.
 
     Parameters
     ----------
-    mea_yaml_file
-
-    Returns
-    -------
-
+    mea_yaml_file: str
+        Path to yaml file
     '''
     path = os.path.abspath(mea_yaml_path)
 
@@ -1070,19 +1114,16 @@ def add_mea(mea_yaml_path):
         elif path.endswith('.yml'):
             electrodes = [f[:-4] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
         print('Available MEA: \n', electrodes)
-        return
 
 
 def remove_mea(mea_name):
-    '''Adds the mea design defined by the yaml file in the install folder
+    '''
+    Removes the mea from the installation folder.
 
     Parameters
     ----------
-    mea_yaml_file
-
-    Returns
-    -------
-
+    mea_name: str
+        The probe name to be removed
     '''
     this_dir, this_filename = os.path.split(__file__)
     electrodes = [f for f in os.listdir(os.path.join(this_dir, "electrodes"))]
@@ -1096,44 +1137,3 @@ def remove_mea(mea_name):
                 print("Removed: ", os.path.join(this_dir, "electrodes", mea_name + '.yml'))
     electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
     print('Available MEA: \n', electrodes)
-    return
-
-
-def rotation_matrix(axis, theta):
-    '''
-
-    Parameters
-    ----------
-    axis
-    theta
-
-    Returns
-    -------
-
-    '''
-    axis = np.asarray(axis)
-    theta = np.asarray(theta)
-    axis = axis / np.linalg.norm(axis)
-    a = np.cos(theta / 2.0)
-    b, c, d = -axis * np.sin(theta / 2.0)
-    aa, bb, cc, dd = a * a, b * b, c * c, d * d
-    bc, ad, ac, ab, bd, cd = b * c, a * d, a * c, a * b, b * d, c * d
-    return np.array([[aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
-                     [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
-                     [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
-
-#
-# if __name__ == '__main__':
-#     # test
-#     # elinfo = {'pos': [[10,25],[10,-5],[10,5],[10,-25]]}
-#     import matplotlib.pylab as plt
-#     elinfo = {'dim': [10, 3], 'pitch': [10, 30]}
-#     pos = get_positions(elinfo)
-#
-#     mea = return_mea(info=elinfo)
-#     gpos = mea.positions
-#     print(pos)
-#
-#     plt.plot(pos[:,1], pos[:,2], '*')
-#     plt.plot(gpos[:,1], gpos[:,2], '*')
-#     plt.axis('equal')
