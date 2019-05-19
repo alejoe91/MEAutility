@@ -5,6 +5,7 @@ import MEAutility as mu
 import yaml
 import os
 
+
 def test_electrodes_field_contribution():
     elec_c = Electrode(position=[100,100,100], normal=[1,0,0], current=10, size=10, shape='circle')
     v_1_c, _ = elec_c.field_contribution(pos=[150,100,100], npoints=1, main_axes=[[0,1,0],[0,0,1]])
@@ -24,6 +25,7 @@ def test_electrodes_field_contribution():
     assert np.isclose([v_1_s], [v_5_s], rtol=0.1)
     assert np.isclose([v_10_s], [v_5_s], rtol=0.1)
 
+
 def test_return_mea():
     mea = mu.return_mea('Neuronexus-32')
     assert isinstance(mea, mu.core.MEA)
@@ -34,6 +36,7 @@ def test_return_mea():
     assert mea.type == 'mea'
     assert mea.size == 7.5
 
+
 def test_mea_set_currents():
     mea = mu.return_mea('Neuronexus-32')
     mea.currents = np.arange(32)
@@ -42,6 +45,7 @@ def test_mea_set_currents():
     mea.currents = np.zeros((32, 200))
     assert len(mea.currents[0]) == 200
     assert mea.currents.shape == (32, 200)
+
 
 def test_mea_compute_field():
     mea = mu.return_mea('Neuronexus-32')
@@ -60,6 +64,7 @@ def test_mea_compute_field():
 
     assert np.isclose(v_arr,v_c_arr).all()
 
+
 def test_mea_save_load():
     mea = mu.return_mea('Neuronexus-32')
     mea.currents = np.arange(32)
@@ -69,6 +74,7 @@ def test_mea_save_load():
     mea_loaded.load_currents('currents.npy')
     os.remove('currents.npy')
     assert np.isclose(mea.currents, mea_loaded.currents).all()
+
 
 def test_mea_handling():
     mea = mu.return_mea('Neuronexus-32')
@@ -80,6 +86,7 @@ def test_mea_handling():
     assert np.isclose(np.mean(mea.positions, axis=0), [0, 0, 0]).all()
     mea.rotate([0, 0, 1], 90)
     assert np.isclose(mea.positions[:, 1], np.zeros(len(mea.positions))).all()
+
 
 def test_add_remove_list_mea():
     info = mu.return_mea_info('Neuronexus-32')
@@ -97,8 +104,9 @@ def test_add_remove_list_mea():
     assert len(mu.return_mea_list()) == number_mea
     assert test_name not in mu.return_mea_list()
 
+
 def test_rectmea():
-    mea = mu.return_mea('SqMEA-10-15um')
+    mea = mu.return_mea('SqMEA-10-15')
     mea.currents = np.arange(100)
 
     assert mea[9][0].current == mea.currents[9]
