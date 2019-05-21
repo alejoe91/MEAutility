@@ -45,8 +45,8 @@ class Electrode:
             'circle', 'square' or 'rect
         size: float or list
             If 'shape' is circle it indicates the radius.
-            If 'shape' is square is the side length.
-            If 'shape' is 'rect' it must have length 2 and it indicates width and height.
+            If 'shape' is square is half the side length.
+            If 'shape' is 'rect' it must have length 2 and it indicates half width and half height.
         '''
         # convert to numpy array
         if type(position) == list:
@@ -78,6 +78,9 @@ class Electrode:
             self.size = size
         else:
             self.size = 5
+        if self.shape == 'rect':
+            assert isinstance(self.size, (list, np.ndarray)) and len(self.size) == 2, \
+                "If shape is 'rect', 'size' should have len equal 2'"
 
     def field_contribution(self, pos, npoints=1, model='inf', main_axes=None, seed=None):
         '''
@@ -139,7 +142,22 @@ class Electrode:
                                         np.abs(np.dot(point, main_axes[1])) < self.size:
                                     placed = True
                                     stim_points.append(point + self.position)
-                        else:
+                        elif self.shape == 'rect':
+                            if main_axes is None:
+                                raise Exception("If electrode is 'rect' main_axes should be provided")
+                            assert isinstance(self.size, (list, np.ndarray)) and len(self.size) == 2, \
+                                "If shape is 'rect', 'size' should have len equal 2'"
+                            while not placed:
+                                arr = (2 * np.max(self.size)) * np.random.rand(3) - np.max(self.size)
+                                # rotate to align to main_axes and keep uniform distribution
+                                M = np.array([main_axes[0], main_axes[1], self.normal])
+                                arr_rot = np.dot(M.T, arr)
+                                point = np.cross(arr_rot, self.normal)  # + self.position
+                                if np.abs(np.dot(point, main_axes[0])) < self.size[0] and \
+                                        np.abs(np.dot(point, main_axes[1])) < self.size[1]:
+                                    placed = True
+                                    stim_points.append(point + self.position)
+                        elif self.shape == 'circle':
                             while not placed:
                                 arr = (2 * self.size) * np.random.rand(3) - self.size
                                 M = np.array([main_axes[0], main_axes[1], self.normal])
@@ -148,6 +166,8 @@ class Electrode:
                                 if np.linalg.norm(point) < self.size:
                                     placed = True
                                     stim_points.append(point + self.position)
+                        else:
+                            raise Exception("'shape' can be 'square', 'rect', or 'circle'")
 
                     stim_points = np.array(stim_points)
                     split_current = float(self.current) / npoints
@@ -198,13 +218,30 @@ class Electrode:
                                             np.abs(np.dot(point, main_axes[1])) < self.size:
                                         placed=True
                                         stim_points.append(point + self.position)
-                            else:
+                            elif self.shape == 'rect':
+                                if main_axes is None:
+                                    raise Exception("If electrode is 'rect' main_axes should be provided")
+                                assert isinstance(self.size, (list, np.ndarray)) and len(self.size) == 2, \
+                                    "If shape is 'rect', 'size' should have len equal 2'"
+                                while not placed:
+                                    arr = (2 * self.size) * np.random.rand(3) - self.size
+                                    # rotate to align to main_axes and keep uniform distribution
+                                    M = np.array([main_axes[0], main_axes[1], self.normal])
+                                    arr_rot = np.dot(M.T, arr)
+                                    point = np.cross(arr_rot, self.normal) # + self.position
+                                    if np.abs(np.dot(point, main_axes[0])) < self.size and \
+                                            np.abs(np.dot(point, main_axes[1])) < self.size:
+                                        placed=True
+                                        stim_points.append(point + self.position)
+                            elif self.shape == 'circle':
                                 while not placed:
                                     arr = (2 * self.size) * np.random.rand(3) - self.size
                                     point = np.cross(arr, self.normal) + self.position
                                     if np.linalg.norm(point - self.position) < self.size:
                                         placed=True
                                         stim_points.append(point)
+                            else:
+                                raise Exception("'shape' can be 'square', 'rect', or 'circle'")
 
                         stim_points = np.array(stim_points)
                         split_current = c / npoints
