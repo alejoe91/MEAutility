@@ -27,16 +27,26 @@ else:
 class Electrode:
     def __init__(self, position=None, normal=None, current=None, sigma=None, max_field=None, shape=None, size=None):
         '''
+        Instantiates and Electrode object
 
         Parameters
         ----------
-        position
-        current
-        sigma
-        max_field
-        points
-        shape
-        size
+        position: np.array or list
+            3D position of the electrode
+        current: float or no.array
+            Stimulating current for the electrode. If np.array it is the time course of the current
+        sigma: float
+            Extracellular condutivity
+        max_field: float
+            Maximum potential when potential is computed in correspondence ot electrode position
+        points: int
+            Number of points to draw for computing stimulating potential
+        shape: str
+            'circle', 'square' or 'rect
+        size: float or list
+            If 'shape' is circle it indicates the radius.
+            If 'shape' is square is the side length.
+            If 'shape' is 'rect' it must have length 2 and it indicates width and height.
         '''
         # convert to numpy array
         if type(position) == list:
@@ -69,20 +79,31 @@ class Electrode:
         else:
             self.size = 5
 
-
     def field_contribution(self, pos, npoints=1, model='inf', main_axes=None, seed=None):
         '''
+        Computes extracellular potential arising from stimulating current
 
         Parameters
         ----------
-        pos
-        npoints
-        model
-        main_axes
+        pos: np.array or list
+            It can be a single 3d point or an array/list of positions (n_points, 3)
+        npoints: int
+            Number of points to split the current within the electrode. It is used to simulate the spatial extent
+            of the electrode
+        model: str
+            'inf' or 'semi'. If 'semi' the method of images is used and the electrode is modeled as lying on
+            semi-infinite plane
+        main_axes: np.array
+            The main axes indicating the plane on which the electrode lies (2 x 3).
+        seed: int
+            Seed for drawing random points
 
         Returns
         -------
-
+        potential: float or np.array
+            Potential computed at the indicated point (float) or points (np.array)
+        stim_points: np.array
+            Stimulating point(s)
         '''
         if seed is not None:
             np.random.seed(seed)
@@ -204,16 +225,22 @@ class Electrode:
 
 
 class MEA(object):
-    def __init__(self, positions, info, normal=None, points_per_electrode=None, sigma=None):
+    def __init__(self, positions, info, normal=None, points_per_electrode=None, sigma=0.3):
         '''
         Intantiates a MEA object
 
         Parameters
         ----------
-        positions
-        info
-        model
-        sigma
+        positions: np.array
+            Array of 3d electrode positions
+        info; dict
+            Dictionary with 'shape', 'plane', 'size', 'type', 'model' information
+        normal: list or np.array
+            3d normal vector of the electrodes
+        points_per_electrode: int
+            Number of points each electrode will stimulate with
+        sigma: float
+            Extracellular conductivity (default 0.3 S/m)
 
         '''
         self.number_electrodes = len(positions)
@@ -282,16 +309,13 @@ class MEA(object):
         self._positions = None
         self.info = info
 
-
     @property
     def positions(self):
         return self._get_electrode_positions()
 
-
     @property
     def currents(self):
         return self._get_currents()
-
 
     @currents.setter
     def currents(self, current_values):
@@ -311,40 +335,14 @@ class MEA(object):
             return None
 
     def _set_positions(self, positions):
-        '''
-
-        Parameters
-        ----------
-        electrodes
-
-        Returns
-        -------
-
-        '''
         for i, el in enumerate(self.electrodes):
             el.position = positions[i]
 
     def _set_normal(self, normal):
-        '''
-
-        Parameters
-        ----------
-        electrodes
-
-        Returns
-        -------
-
-        '''
         for i, el in enumerate(self.electrodes):
             el.normal = normal/np.linalg.norm(normal)
 
     def _get_currents(self):
-        '''
-
-        Returns
-        -------
-
-        '''
         curr = [el.current for el in self.electrodes]
         if np.all([isinstance(c, (list, np.ndarray)) for c in curr]):
             curr_len = [len(el.current) for el in self.electrodes]
@@ -388,14 +386,12 @@ class MEA(object):
 
     def set_electrodes(self, electrodes):
         '''
+        Sets MEA electrodes
 
         Parameters
         ----------
-        electrodes
-
-        Returns
-        -------
-
+        electrodes: list
+            List of Electrode objects
         '''
         self.electrodes = electrodes
         self.number_electrodes = len(electrodes)
@@ -405,7 +401,8 @@ class MEA(object):
 
         Parameters
         ----------
-        amp
+        mean
+        sd
 
         Returns
         -------
@@ -416,14 +413,12 @@ class MEA(object):
 
     def set_currents(self, current_values):
         '''
+        Sets MEA currents
 
         Parameters
         ----------
-        current_values
-
-        Returns
-        -------
-
+        current_values: np.array
+            Current values. Either (n_elec) or (n_elec, n_timepoints)
         '''
         if isinstance(current_values, (list, np.ndarray)):
             if len(current_values) != self.number_electrodes:
@@ -436,14 +431,14 @@ class MEA(object):
 
     def set_current(self, el_id, current_value):
         '''
+        Sets MEA current
 
         Parameters
         ----------
-        current_values
-
-        Returns
-        -------
-
+        el_id: int
+            Electrode index
+        current_value: float or array
+            Current value for the specified electrode
         '''
         if isinstance(current_value, (float, int, np.float, np.integer)):
             self.electrodes[el_id].current = current_value
@@ -457,35 +452,39 @@ class MEA(object):
                     if len(el.current) != len(current_value):
                         el.current = np.array([el.current[0]] * len(current_value))
 
-    def reset_currents(self, amp=None):
+    def reset_currents(self, amp=0):
         '''
+        Resets all currents
 
         Parameters
         ----------
-        amp
-
-        Returns
-        -------
-
+        amp: float
+            Amplitude to reset currents (default=0)
         '''
-        if amp is None:
-            currents = np.zeros(self.number_electrodes)
-        else:
-            currents = amp*np.ones(self.number_electrodes)
+        currents = amp*np.ones(self.number_electrodes)
         self.currents = currents
 
     def compute_field(self, points, return_stim_points=False, seed=None, verbose=False):
         '''
+        Computes extracellular potential from stimulating currents.
 
         Parameters
         ----------
-        points
-        return_stim_points
-        seed
+        points: list or np.array
+            Single point (3) or array of points (n_points, 3) to compute potential
+        return_stim_points: bool
+            If True, stimulating points are returned
+        seed: int
+            Seed for random drawing of stimulation points
+        verbose: bool
+            If True, output is verbose
 
         Returns
         -------
-
+        vp: float or np.array
+            Computed potential at the specified point (float) or points (np.array)
+        stim_points: np.array
+            Stimulating point(s)
         '''
         c = self.electrodes[0].current
 
@@ -564,10 +563,26 @@ class MEA(object):
             return vp
 
     def save_currents(self, filename):
+        '''
+        Saves MEA currents to file in .npy fornat
+
+        Parameters
+        ----------
+        filename: str
+            Path to file
+
+        '''
         np.save(filename, self.currents)
         print('Currents saved successfully to file ', filename)
 
     def load_currents(self, filename):
+        '''
+        Load currents from file
+        Parameters
+        ----------
+        filename: str
+            Path to file
+        '''
         if os.path.isfile(filename):
             currents = np.load(filename)
             if len(currents) != self.number_electrodes:
@@ -580,17 +595,13 @@ class MEA(object):
 
     def rotate(self, axis, theta):
         '''
-
+        Rotates the MEA in 3d along a specified axis
         Parameters
         ----------
         axis: np.array
-            rotation axis
+            Rotation axis
         theta: float
-            anglo in degrees counterclock wise
-
-        Returns
-        -------
-
+            Angle in degrees counterclock-wise
         '''
         M = rotation_matrix(axis, np.deg2rad(theta))
         rot_pos = np.dot(M, self.positions.T).T
@@ -606,43 +617,35 @@ class MEA(object):
 
     def move(self, vector):
         '''
+        Moves the MEA in 3d
 
         Parameters
         ----------
-        axis
-        theta
-
-        Returns
-        -------
-
+        vector: list or np.array
+            3d array with x, y, z shifts
         '''
         move_pos = self.positions + vector
         self._set_positions(move_pos)
 
     def center(self):
         '''
-
-        Returns
-        -------
-
+        Centers the MEA to (0,0,0)
         '''
         center_pos = center_mea(self.positions)
         self._set_positions(center_pos)
 
 
 class RectMEA(MEA):
-    '''
-
-    '''
     def __init__(self, positions, info):
         '''
+        Instantiates a RectMEA object
 
         Parameters
         ----------
-        dim
-        pitch
-        width
-        x_plane
+        positions: np.array
+            Array of 3d electrode positions
+        info; dict
+            Dictionary with 'shape', 'plane', 'size', 'type', 'model', 'dim', 'pitch' information
         '''
         MEA.__init__(self, positions, info)
         if 'dim' in info.keys():
@@ -669,6 +672,14 @@ class RectMEA(MEA):
             return None
 
     def get_current_matrix(self):
+        '''
+        Returns MEA currents as a matrix
+
+        Returns
+        -------
+        current_matrix: np.array
+            2D array with MEA currents
+        '''
         current_matrix = np.zeros(self.dim)
         for i in np.arange(0, self.dim[0]):
             for j in np.arange(0, self.dim[1]):
@@ -676,6 +687,14 @@ class RectMEA(MEA):
         return current_matrix
 
     def get_electrode_matrix(self):
+        '''
+        Returns MEA electrode matrix
+
+        Returns
+        -------
+        electrode_matrix: np.array
+            2D array with MEA electrode objects
+        '''
         electrode_matrix = np.empty(self.dim, dtype=object)
         for i in np.arange(0, self.dim[0]):
             for j in np.arange(0, self.dim[1]):
@@ -683,6 +702,14 @@ class RectMEA(MEA):
         return electrode_matrix
 
     def set_current_matrix(self, currents):
+        '''
+        Sets MEA currents with a matrix
+
+        Parameters
+        ----------
+        currents: np.array
+            2D array with MEA currents
+        '''
         current_array = np.zeros((self.number_electrodes))
         for i in np.arange(self.dim[0]):
             for j in np.arange(self.dim[1]):
@@ -690,6 +717,21 @@ class RectMEA(MEA):
         self.set_currents(current_values=current_array)
 
     def get_linear_id(self, i, j):
+        '''
+        Returns linear index for position i, j
+
+        Parameters
+        ----------
+        i: int
+            Row index
+        j: int
+            Column index
+
+        Returns
+        -------
+        index: int
+            Linear index
+        '''
         return self.dim[0] * j + i
 
 
