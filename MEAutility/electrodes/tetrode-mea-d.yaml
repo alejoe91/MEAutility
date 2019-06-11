@@ -1,5 +1,5 @@
 electrode_name: tetrode-mea-d
-description: "Silicon tetrode with 4 square contacts in diamond configuration.",
+description: "Silicon tetrode with 4 square contacts in diamond configuration."
 sortlist: null
 pitch: [32, 16]
 dim: [1, 2, 1]

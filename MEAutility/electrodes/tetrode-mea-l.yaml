@@ -1,5 +1,5 @@
 electrode_name: tetrode-mea-l
-description: "Silicon tetrode with 4 square contacts in linear configuration.",
+description: "Silicon tetrode with 4 square contacts in linear configuration."
 sortlist: null
 pitch: [16, 1]
 dim: [4, 1]

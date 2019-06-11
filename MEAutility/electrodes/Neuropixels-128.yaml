@@ -1,5 +1,5 @@
 electrode_name: Neuropixels-128
-description: "Neuropixels probe. 128 square contacts in 4 staggered columns.",
+description: "Neuropixels probe. 128 square contacts in 4 staggered columns."
 sortlist: null
 pitch: [40.0, 16.0]
 dim: [32, 4]

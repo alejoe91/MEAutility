@@ -1,5 +1,5 @@
 electrode_name: tetrode
-description: "Microwire tetrode with 4 circular contacts.",
+description: "Microwire tetrode with 4 circular contacts."
 sortlist: null
 pitch: 16
 dim: 2
