@@ -248,6 +248,7 @@ Let's first create a ``user.yaml`` file on-the-fly.
     
     user_info = {'dim': [10, 12, 9, 8],
                  'electrode_name': 'user',
+                 'description': "a brief description of the probe",
                  'pitch': [10.0, 40.0],
                  'shape': 'circle',
                  'size': 7.5,

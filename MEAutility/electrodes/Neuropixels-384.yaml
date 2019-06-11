@@ -1,4 +1,5 @@
 electrode_name: Neuropixels-384
+description: "Neuropixels probe. 384 square contacts in 4 staggered columns.",
 sortlist: null
 pitch: [40.0, 16.0]
 dim: [96, 4]

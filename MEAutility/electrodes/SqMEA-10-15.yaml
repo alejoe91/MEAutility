@@ -1,4 +1,5 @@
 electrode_name: SqMEA-10-15
+description: "Square MEA. 100 square contacts in 10x10 matrix configuration with 15um pitch.",
 sortlist: null
 pitch: 15
 dim: 10

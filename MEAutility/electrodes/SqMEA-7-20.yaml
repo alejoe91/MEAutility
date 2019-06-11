@@ -1,4 +1,5 @@
 electrode_name: SqMEA-7-20
+description: "Square MEA. 49 square contacts in 7x7 matrix configuration with 20um pitch.",
 sortlist: null
 pitch: 20
 dim: 7

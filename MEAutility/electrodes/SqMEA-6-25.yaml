@@ -1,4 +1,5 @@
 electrode_name: SqMEA-6-25
+description: "Square MEA. 36 square contacts in 6x6 matrix configuration with 25um pitch.",
 sortlist: null
 pitch: 25
 dim: 6

@@ -9,7 +9,7 @@ install_requires = []
 
 setup(
     name="MEAutility",
-    version="1.2.4",
+    version="1.3.0",
     author="Alessio Buccino",
     author_email="alessiob@ifi.uio.no",
     description="Python package for multi-electrode array (MEA) handling and stimulation.",
