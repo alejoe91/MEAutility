@@ -7,28 +7,47 @@ import matplotlib.pylab as plt
 
 import matplotlib.patches as patches
 from matplotlib.path import Path
-from matplotlib.collections import PatchCollection
-from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d import art3d
 from matplotlib import colors as mpl_colors
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
+
 def plot_probe(mea, ax=None, xlim=None, ylim=None, color_currents=False, top=None, bottom=None,
                cmap='viridis', type='shank', alpha_elec=0.7, alpha_prb=0.3):
     '''
+    Plots probe in 2d.
     
     Parameters
     ----------
-    mea
-    axis
-    xlim
-    ylim
+    mea: MEA object
+        The MEA to be plotted
+    ax: matplotlib axis
+        The axis to plot on
+    xlim: list
+        Limits for x axis
+    ylim: list
+        Limits for y axis
+    color_currents: bool
+        If True currents are color-coded
+    top: int
+        The length of the probe in the top direction
+    bottom: int
+        The length of the probe in the bottom direction
+    cmap: matplotlib colormap
+        The colormap to use for currents
+    type: str
+        'shank' or 'plane' type
+    alpha_elec: float
+        Alpha value for electrodes
+    alpha_prb: float
+        Alpha value for probe
 
     Returns
     -------
+    ax: matplotlib axis
+        The output axis
 
     '''
-
 
     if ax is None:
         fig = plt.figure()
@@ -45,7 +64,6 @@ def plot_probe(mea, ax=None, xlim=None, ylim=None, color_currents=False, top=Non
         center_x = (min_x + max_x)/2.
         min_y, max_y = [np.min(np.dot(mea.positions, mea.main_axes[1])),
                         np.max(np.dot(mea.positions, mea.main_axes[1]))]
-        center_y = (min_y + max_y)/2.
 
         if type == 'shank':
             if top is None:
@@ -127,7 +145,17 @@ def plot_probe(mea, ax=None, xlim=None, ylim=None, color_currents=False, top=Non
 
                 ax.add_patch(elec)
     else:
-        raise NotImplementedError('Wire type plotting not implemented')
+        mea_pos = np.array([np.dot(mea.positions, mea.main_axes[0]), np.dot(mea.positions, mea.main_axes[1])]).T
+
+        if top is None:
+            top = 200
+        for pos in mea_pos:
+            ax.add_patch(plt.Rectangle((pos[0] - mea.size, 0), 2*mea.size, top, facecolor='gray',
+                                        alpha=alpha_prb, edgecolor='k'))
+        probe_left = np.min(mea_pos)
+        probe_right = np.max(mea_pos)
+        probe_bottom = -50
+        probe_top = top
 
     ax.axis('equal')
 
@@ -146,27 +174,41 @@ def plot_probe(mea, ax=None, xlim=None, ylim=None, color_currents=False, top=Non
 def plot_probe_3d(mea, ax=None, xlim=None, ylim=None, zlim=None, top=None, bottom=None, type='shank',
                   color_currents=False, cmap='viridis', alpha_elec=0.7, alpha_prb=0.3):
     '''
+    Plots probe in 3d.
 
-    Parameters
-    ----------
-    mea
-    alpha
-    ax
-    xlim
-    ylim
-    zlim
-    top
-    type
+    mea: MEA object
+        The MEA to be plotted
+    ax: matplotlib axis
+        The axis to plot on
+    xlim: list
+        Limits for x axis
+    ylim: list
+        Limits for y axis
+    ylim: list
+        Limits for z axis
+    color_currents: bool
+        If True currents are color-coded
+    top: int
+        The length of the probe in the top direction
+    bottom: int
+        The length of the probe in the bottom direction
+    cmap: matplotlib colormap
+        The colormap to use for currents
+    type: str
+        'shank' or 'plane' type
+    alpha_elec: float
+        Alpha value for electrodes
+    alpha_prb: float
+        Alpha value for probe
 
     Returns
     -------
+    ax: matplotlib axis
+        The output axis
 
     '''
-    from mpl_toolkits.mplot3d import Axes3D
-    from mpl_toolkits.mplot3d import art3d
     from matplotlib import colors as mpl_colors
     from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-    from matplotlib import patches
 
     if ax is None:
         fig = plt.figure()
@@ -194,7 +236,7 @@ def plot_probe_3d(mea, ax=None, xlim=None, ylim=None, zlim=None, top=None, botto
             ax.add_collection3d(el)
         elif mea.shape == 'circle':
             for i, pos in enumerate(mea.positions):
-                p = make_3d_ellipse_patch(mea.size, mea.main_axes[0], mea.main_axes[1],
+                p = _make_3d_ellipse_patch(mea.size, mea.main_axes[0], mea.main_axes[1],
                                           pos, ax, facecolor=elec_colors[i], edgecolor=None, alpha=alpha_elec)
                 p.set_alpha(alpha_elec)
 
@@ -205,7 +247,6 @@ def plot_probe_3d(mea, ax=None, xlim=None, ylim=None, zlim=None, top=None, botto
         max_dim_2 = np.max(np.dot(mea.positions, mea.main_axes[1]))
 
         center_dim_1 = np.dot(center_probe, mea.main_axes[0])
-        center_dim_2 = np.dot(center_probe, mea.main_axes[1])
         center_dim_3 = center_probe * np.abs(mea.normal)
 
         min_dim_1c = np.min(np.dot(mea.positions-center_probe, mea.main_axes[0]))
@@ -226,7 +267,6 @@ def plot_probe_3d(mea, ax=None, xlim=None, ylim=None, zlim=None, top=None, botto
             else:
                 probe_bottom = (min_dim_2 - bottom) * mea.main_axes[1]
             probe_corner = (min_dim_2 - 0.1 * probe_height) * mea.main_axes[1]
-            probe_center_bottom = center_dim_1 * mea.main_axes[0]
 
             verts = np.array([
                 (min_dim_1 - 2 * mea.size) * mea.main_axes[0] + probe_top + center_dim_3,  # left, bottom
@@ -259,20 +299,30 @@ def plot_probe_3d(mea, ax=None, xlim=None, ylim=None, zlim=None, top=None, botto
         r.set_facecolor(mea_col)
         ax.add_collection3d(r)
 
-        if xlim is not None:
-            ax.set_xlim(xlim)
-        else:
-            ax.set_xlim([minmin, maxmax] + center_probe[0])
-        if ylim is not None:
-            ax.set_ylim(ylim)
-        else:
-            ax.set_ylim([minmin, maxmax] + center_probe[1])
-        if zlim is not None:
-            ax.set_zlim(zlim)
-        else:
-            ax.set_zlim([minmin, maxmax] + center_probe[2])
     else:
-        raise NotImplementedError('Wire type plotting not implemented')
+        if top is None:
+            top = 200
+        for pos in mea.positions:
+            plot_cylinder_3d(pos, direction=-mea.normal, radius=mea.size, length=top, color='gray', alpha=alpha_prb,
+                             ax=ax)
+
+        center_probe = mea.positions.mean(axis=0)
+
+        minmin = -top
+        maxmax = top
+
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    else:
+        ax.set_xlim([minmin, maxmax] + center_probe[0])
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    else:
+        ax.set_ylim([minmin, maxmax] + center_probe[1])
+    if zlim is not None:
+        ax.set_zlim(zlim)
+    else:
+        ax.set_zlim([minmin, maxmax] + center_probe[2])
 
     return ax
 
@@ -280,14 +330,39 @@ def plot_probe_3d(mea, ax=None, xlim=None, ylim=None, zlim=None, top=None, botto
 def plot_v_image(mea, v_plane=None, x_bound=None, y_bound=None, z_bound=None, offset=0,
                  plane='yz', npoints=30, ax=None, cmap='viridis', **kwargs):
     '''
-
+    Plots voltage image generated by mea currents.
+    
     Parameters
     ----------
-    mea
-    plane
+    mea: MEA object
+        The MEA to be plotted
+    v_plane: np.array
+        The voltage values to be plotted (default=None)
+    x_bound: list
+        X boundaries to compute grid (if plane has 'x' dimension)
+    y_bound: list
+        Y boundaries to compute grid (if plane has 'y' dimension)
+    z_bound: list
+        Z boundaries to compute grid (if plane has 'z' dimension) 
+    offset: float
+        Offset in um from probe plane to compute electrical potential
+    plane: str
+        'xy', 'yz', 'xz'
+    npoints: int
+        Number of points in grid
+    ax: matplotlib axis
+        The axis to plot on
+    cmap: matplotlib colormap
+        The colormap to use for currents
+    kwargs: keyword args
+        Other arguments for matshow function
 
     Returns
     -------
+    ax: matplotlib axis
+        The output axis
+    v_grid: np.array
+        The voltage image 
 
     '''
     if v_plane is None:
@@ -339,20 +414,46 @@ def plot_v_image(mea, v_plane=None, x_bound=None, y_bound=None, z_bound=None, of
 
 
 def plot_v_surf(mea, v_plane=None, x_bound=None, y_bound=None, z_bound=None, offset=0,
-                plane='yz',  plot_plane=None, npoints=30, ax=None, cmap='viridis', alpha=0.8, distance=30, **kwargs):
+                plane='yz', plot_plane=None, npoints=30, ax=None, cmap='viridis', alpha=0.8, distance=30):
     '''
-
+    Plots voltage image generated by mea currents.
+    
     Parameters
     ----------
-    mea
-    plane
-
+    mea: MEA object
+        The MEA to be plotted
+    v_plane: np.array
+        The voltage values to be plotted (default=None)
+    x_bound: list
+        X boundaries to compute grid (if plane has 'x' dimension)
+    y_bound: list
+        Y boundaries to compute grid (if plane has 'y' dimension)
+    z_bound: list
+        Z boundaries to compute grid (if plane has 'z' dimension) 
+    offset: float
+        Offset in um from probe plane to compute electrical potential
+    plane: str
+        'xy', 'yz', 'xz'
+    plot_plane: str
+        Plane to plot surf 
+    npoints: int
+        Number of points in grid
+    ax: matplotlib axis
+        The axis to plot on
+    cmap: matplotlib colormap
+        The colormap to use for currents
+    alpha: float
+        Aplha value for surf plot
+    distance: float
+        Distance of surf plot from mea
+    
     Returns
     -------
-
+    ax: matplotlib axis
+        The output axis
+    v_grid: np.array
+        The voltage image 
     '''
-    from mpl_toolkits.mplot3d import Axes3D
-
     if v_plane is None:
         v_grid = np.zeros((npoints, npoints))
         if plane == 'xy':
@@ -376,13 +477,6 @@ def plot_v_surf(mea, v_plane=None, x_bound=None, y_bound=None, z_bound=None, off
             for i, v1 in enumerate(vec1):
                 for j, v2 in enumerate(vec2):
                     v_grid[i, j] = mea.compute_field(np.array([v1, offset, v2]))
-        # elif plane == 'par':
-        #     assert x_bound is not None and z_bound is not None
-        #     vec1 = np.linspace(x_bound[0], x_bound[1], npoints)
-        #     vec2 = np.linspace(z_bound[0], z_bound[1], npoints)
-        #     for i, v1 in enumerate(vec1):
-        #         for j, v2 in enumerate(vec2):
-        #             v_grid[i, j] = mea.compute_field(np.array([v1, offset, v2]))
 
         if ax is None:
             fig = plt.figure()
@@ -398,14 +492,11 @@ def plot_v_surf(mea, v_plane=None, x_bound=None, y_bound=None, z_bound=None, off
                                 antialiased=True)
         if plot_plane is not None:
             if plot_plane == 'xy':
-                rotate_poly3Dcollection(surf1, [1, 0, 0], [0, 1, 0], shift=[0, 0, distance])
+                _rotate_poly3Dcollection(surf1, [1, 0, 0], [0, 1, 0], shift=[0, 0, distance])
             elif plot_plane == 'yz':
-                rotate_poly3Dcollection(surf1, [0, 1, 0], [0, 0, 1], shift=[distance, 0, 0])
+                _rotate_poly3Dcollection(surf1, [0, 1, 0], [0, 0, 1], shift=[distance, 0, 0])
             elif plot_plane == 'xz':
-                rotate_poly3Dcollection(surf1, [1, 0, 0], [0, 0, 1], shift=[0, distance, 0])
-            # elif plot_plane == 'par':
-
-
+                _rotate_poly3Dcollection(surf1, [1, 0, 0], [0, 0, 1], shift=[0, distance, 0])
     else:
         v_grid = v_plane
         if plane == 'xy':
@@ -430,30 +521,47 @@ def plot_v_surf(mea, v_plane=None, x_bound=None, y_bound=None, z_bound=None, off
                                 antialiased=True)
         if plot_plane is not None:
             if plot_plane == 'xy':
-                rotate_poly3Dcollection(surf1, [1, 0, 0], [0, 1, 0], shift=[0, 0, distance])
+                _rotate_poly3Dcollection(surf1, [1, 0, 0], [0, 1, 0], shift=[0, 0, distance])
             elif plot_plane == 'yz':
-                rotate_poly3Dcollection(surf1, [0, 1, 0], [0, 0, 1], shift=[distance, 0, 0])
+                _rotate_poly3Dcollection(surf1, [0, 1, 0], [0, 0, 1], shift=[distance, 0, 0])
             elif plot_plane == 'xz':
-                rotate_poly3Dcollection(surf1, [1, 0, 0], [0, 0, 1], shift=[0, distance, 0])
+                _rotate_poly3Dcollection(surf1, [1, 0, 0], [0, 0, 1], shift=[0, distance, 0])
 
     return ax, v_grid.T
 
 
-def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, spacing=None,
-                       scalebar=False, time=None, dt=None, vscale=None, hide_axis=True):
+def plot_mea_recording(signals, mea, colors=None, lw=1, ax=None, spacing=None,
+                       scalebar=False, time=None, vscale=None, hide_axis=True):
     '''
+    Plots mea signals at electrode locations.
 
     Parameters
     ----------
-    signals
-    mea_pos
-    mea_pitch
-    color
-    points
-    lw
+    signals: np.array
+        The signals to plot. Can be 2D (single signals) or 3D (multiple signals)
+    mea: MEA object
+        The MEA to be plotted
+    colors: matplotlib colors
+        The color or colors to use
+    lw: float
+        Line width of the lines
+    ax: matplotlib axis
+        The axis to plot on
+    spacing: float
+        The spacing in the x-direction
+    scalebar: bool
+        If True, a scale bar is plotted
+    time: float
+        If scalebar is True, the time of the scalebar
+    vscale: float
+        The scale to use for the signal (default .5 times the maximum signal)
+    hide_axis: bool
+        If True (default), axis are hidden
 
     Returns
     -------
+    ax: matplotlib axis
+        The output axis
 
     '''
     if ax is None:
@@ -467,7 +575,7 @@ def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, s
     mea_pitch = [np.max(np.diff(np.sort(mea_pos[:, 0]))), np.max(np.diff(np.sort(mea_pos[:, 1])))]
 
     if spacing is None:
-        spacing = 0.1*np.max(mea_pitch)
+        spacing = 0.1*np.min(mea_pitch)
 
     if mea_pitch[0] == 0:
         mea_pitch[0] = spacing + 1
@@ -488,54 +596,35 @@ def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, s
             colors = 'k'
 
     number_electrodes = mea.number_electrodes
-    for el in range(number_electrodes):
-        if len(signals.shape) == 3:  # multiple
-            if points:
-                for sp_i, sp in enumerate(signals_norm):
-                    if len(colors) == len(signals_norm) and len(colors) > 1:
-                        ax.plot(np.linspace(-(mea_pitch[0]-spacing)/2., (mea_pitch[0]-spacing)/2., signals.shape[2])
-                                + mea_pos[el, 0], np.transpose(sp[el, :]) + mea_pos[el, 1], linestyle='-',
-                                marker='o', ms=2, lw=lw,
-                                color=colors[np.mod(sp_i, len(colors))],
-                                label='EAP ' + str(sp_i+1))
-                    else:
-                        ax.plot(np.linspace(-(mea_pitch[0]-spacing)/2., (mea_pitch[0]-spacing)/2., signals.shape[2])
-                                + mea_pos[el, 0], np.transpose(sp[el, :]) + mea_pos[el, 1], linestyle='-',
-                                marker='o', ms=2, lw=lw, color=colors,
-                                label='EAP ' + str(sp_i + 1))
-            else:
-                for sp_i, sp in enumerate(signals_norm):
-                    if len(colors) == len(signals_norm):
-                        ax.plot(np.linspace(-(mea_pitch[0]-spacing)/2., (mea_pitch[0]-spacing)/2., signals.shape[2])
-                                + mea_pos[el, 0], np.transpose(sp[el, :]) + mea_pos[el, 1], lw=lw,
-                                color=colors[np.mod(sp_i, len(colors))],
-                                label='EAP ' + str(sp_i+1))
-                    else:
-                        ax.plot(np.linspace(-(mea_pitch[0]-spacing)/2., (mea_pitch[0]-spacing)/2., signals.shape[2])
-                                + mea_pos[el, 0], np.transpose(sp[el, :]) + mea_pos[el, 1], lw=lw, color=colors,
-                                label='EAP ' + str(sp_i + 1))
+    if len(signals.shape) == 3:  # multiple
+        for sp_i, sp in enumerate(signals_norm):
+            for el in range(number_electrodes):
+                if len(colors) > 1:
+                    ax.plot(np.linspace(-(mea_pitch[0]-spacing)/2., (mea_pitch[0]-spacing)/2., signals.shape[2])
+                            + mea_pos[el, 0], np.transpose(sp[el, :]) + mea_pos[el, 1], lw=lw,
+                            color=colors[int(np.mod(sp_i, len(colors)))],
+                            label='EAP ' + str(sp_i+1))
+                else:
+                    ax.plot(np.linspace(-(mea_pitch[0]-spacing)/2., (mea_pitch[0]-spacing)/2., signals.shape[2])
+                            + mea_pos[el, 0], np.transpose(sp[el, :]) + mea_pos[el, 1], lw=lw, color=colors,
+                            label='EAP ' + str(sp_i + 1))
 
-        else:
-            if points:
-                ax.plot(np.linspace(-(mea_pitch[0]-spacing)/2., (mea_pitch[0]-spacing)/2., signals.shape[1]) +
-                        mea_pos[el, 0], signals_norm[el, :]
-                        + mea_pos[el, 1], color=colors, linestyle='-', marker='o', ms=2, lw=lw)
-            else:
-                ax.plot(np.linspace(-(mea_pitch[0]-spacing)/2., (mea_pitch[0]-spacing)/2., signals.shape[1]) +
-                        mea_pos[el, 0], signals_norm[el, :] +
-                        mea_pos[el, 1], color=colors, lw=lw)
+    else:
+        for el in range(number_electrodes):
+            ax.plot(np.linspace(-(mea_pitch[0]-spacing)/2., (mea_pitch[0]-spacing)/2., signals.shape[1]) +
+                    mea_pos[el, 0], signals_norm[el, :] +
+                    mea_pos[el, 1], color=colors, lw=lw)
 
-        # ax.set_ylim([np.min(signals), np.max(signals)])
-        if hide_axis:
-            ax.set_xticks([])
-            ax.set_yticks([])
-            ax.axis('off')
+    if hide_axis:
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.axis('off')
 
     ax.set_xlim([np.min(mea_pos[:, 0]) -(mea_pitch[0]-spacing)/2., np.max(mea_pos[:, 0]) + (mea_pitch[0]-spacing)/2.])
 
     if scalebar:
-        if dt is None and time is None:
-            raise AttributeError('Pass either dt or time in the argument')
+        if time is None:
+            raise AttributeError("Pass the 'time' argument")
         else:
             shift = 0.1*spacing
             pos_h = [np.min(mea_pos[:, 0]), np.min(mea_pos[:, 1]) - 1.5*mea_pitch[1]]
@@ -556,36 +645,49 @@ def plot_mea_recording(signals, mea, colors=None, points=False, lw=1, ax=None, s
 
     if not no_tight:
         fig.tight_layout()
+    ax.axis('equal')
 
     return ax
 
 
-def play_mea_recording(signals, mea, fs, window=1, step=0.1, colors=None, lw=1, ax=None, fig=None, spacing=None,
-                       scalebar=False, time=None, dt=None, vscale=None, spikes=None, repeat=False, interval=10):
+def play_mea_recording(signals, mea, fs, window=1, step=0.1, colors=None, lw=1, ax=None, spacing=None,
+                       vscale=None, repeat=False, interval=10, hide_axis=True):
     '''
+    Plays animation of the signals at electrode locations.
 
     Parameters
     ----------
-    signals
-    mea
-    fs
-    window
-    step
-    colors
-    lw
-    ax
-    fig
-    spacing
-    scalebar
-    time
-    dt
-    vscale
-    spikes
-    repeat
-    interval
+    signals: np.array
+        The signals to plot. Can be 2D (single signals) or 3D (multiple signals)
+    mea: MEA object
+        The MEA to be plotted
+    fs: float
+        Sampling frequency in Hz
+    window: float
+        The sliding window in seconds
+    step: float
+        The step of the sliding window in seconds
+    colors: matplotlib colors
+        The color or colors to use
+    lw: float
+        Line width of the lines
+    ax: matplotlib axis
+        The axis to plot on
+    spacing: float
+        The spacing in the x-direction
+    vscale: float
+        The scale to use for the signal (default .5 times the maximum signal)
+    repeat: bool
+        If True (default=False), animation is repeated
+    interval: int
+        Interval between frames in ms
+    hide_axis: bool
+        If True (default), axis are hidden
 
     Returns
     -------
+    anim: matplotlib animation
+        The output animation
 
     '''
     import matplotlib.animation as animation
@@ -597,16 +699,14 @@ def play_mea_recording(signals, mea, fs, window=1, step=0.1, colors=None, lw=1, 
     mea_pos = np.array([np.dot(mea.positions, mea.main_axes[0]), np.dot(mea.positions, mea.main_axes[1])]).T
     mea_pitch = [np.max(np.diff(mea_pos[:, 0])), np.max(np.diff(mea_pos[:, 1]))]
 
-    if fig is None:
-        fig = plt.figure()
     if ax is None:
+        fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1, frameon=False)
-        no_tight = False
     else:
-        no_tight = True
+        fig = ax.get_figure()
 
     if spacing is None:
-        spacing = 0.1 * np.max(mea_pitch)
+        spacing = 0.1 * np.min(mea_pitch)
 
     # normalize to min peak
     if vscale is None:
@@ -634,9 +734,10 @@ def play_mea_recording(signals, mea, fs, window=1, step=0.1, colors=None, lw=1, 
     text = ax.text(0.7, 0, 'Time: ',
                    color='k', fontsize=15, transform=ax.transAxes)
 
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.axis('off')
+    if hide_axis:
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.axis('off')
 
     def update(i):
         if n_window + i < signals.shape[1]:
@@ -651,7 +752,7 @@ def play_mea_recording(signals, mea, fs, window=1, step=0.1, colors=None, lw=1, 
 
         return tuple(lines) + (text,)
 
-    anim = animation.FuncAnimation(fig, update, start, interval=interval, blit=True, repeat=False)
+    anim = animation.FuncAnimation(fig, update, start, interval=interval, blit=True, repeat=repeat)
     fig.tight_layout()
 
     return anim
@@ -660,28 +761,42 @@ def play_mea_recording(signals, mea, fs, window=1, step=0.1, colors=None, lw=1, 
 def plot_cylinder_3d(bottom, direction, length, radius, color='k', alpha=.5, ax=None,
                      xlim=None, ylim=None, zlim=None):
     '''
+    Plots cylinder in 3d.
 
     Parameters
     ----------
-    bottom
-    direction
-    color
-    alpha
-    ax
-    xlim
-    ylim
-    zlim
+    bottom: list or np.array
+        3D point of the bottom of the cylinder
+    direction: list or np.array
+        3D direction of the cylinder
+    length: float
+        Length of the cylinder in um
+    radius: float
+        Radius of the cylinder in um
+    color: matplotlib color
+        Color of the cylinder
+    alpha: float
+        Alpha vlue of the cylinder
+    ax: matplotlib axis
+        The axis to plot on
+    xlim: list
+        Limits for x axis
+    ylim: list
+        Limits for y axis
+    ylim: list
+        Limits for z axis
 
     Returns
     -------
-
+    ax: matplotlib axis
+        The output axis
     '''
     if ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1, projection='3d')
 
-    poly3d = get_polygons_for_cylinder(bottom, direction, length, radius, n_points=100, facecolor=color, edgecolor='k',
-                              alpha=alpha, lw=0., flatten_along_zaxis=False)
+    poly3d = _get_polygons_for_cylinder(bottom, direction, length, radius, n_points=100, facecolor=color, edgecolor='k',
+                                        alpha=alpha, lw=0., flatten_along_zaxis=False)
 
     for crt_poly3d in poly3d:
         ax.add_collection3d(crt_poly3d)
@@ -696,7 +811,12 @@ def plot_cylinder_3d(bottom, direction, length, radius, color='k', alpha=.5, ax=
     return ax
 
 
-def rotate_poly3Dcollection(poly3d, axis_1, axis_2, shift=[0,0,0]):
+def _rotate_poly3Dcollection(poly3d, axis_1, axis_2, shift=None):
+    '''
+    Helper function to rotate poly3Csollections in 3d.
+    '''
+    if shift is None:
+        shift = [0, 0, 0]
     vec = poly3d._vec
     shift = np.array(shift)
     M = np.array([axis_1, axis_2, np.cross(axis_1, axis_2)])  # Get the rotation matrix
@@ -705,23 +825,9 @@ def rotate_poly3Dcollection(poly3d, axis_1, axis_2, shift=[0,0,0]):
     poly3d._vec = rotated_vec
 
 
-def make_3d_ellipse_patch(size, axis_1, axis_2, position, ax, facecolor='orange', edgecolor=None, alpha=1.):
+def _make_3d_ellipse_patch(size, axis_1, axis_2, position, ax, facecolor='orange', edgecolor=None, alpha=1.):
     '''
-
-    Parameters
-    ----------
-    size
-    axis_1
-    axis_2
-    position
-    ax
-    facecolor
-    edgecolor
-    alpha
-
-    Returns
-    -------
-
+    Helper function to make 3d ellipse patch.
     '''
     p = patches.Circle((0, 0), size, facecolor=facecolor, alpha=alpha)
     ax.add_patch(p)
@@ -747,19 +853,7 @@ def make_3d_ellipse_patch(size, axis_1, axis_2, position, ax, facecolor='orange'
 
 def _cylinder(pos_start, direction, length, radius, n_points, flatten_along_zaxis=False):
     '''
-
-    Parameters
-    ----------
-    pos_start
-    direction
-    length
-    radius
-    n_points
-    flatten_along_zaxis
-
-    Returns
-    -------
-
+    Helper function to construct 3d cylinders.
     '''
     alpha = np.array([0., length])
 
@@ -830,26 +924,10 @@ def _cylinder(pos_start, direction, length, radius, n_points, flatten_along_zaxi
     return x, y, z
 
 
-def get_polygons_for_cylinder(pos_start, direction, length, radius, n_points, facecolor='b', edgecolor='k', alpha=1.,
-                              lw = 0., flatten_along_zaxis=False):
+def _get_polygons_for_cylinder(pos_start, direction, length, radius, n_points, facecolor='b', edgecolor='k', alpha=1.,
+                               lw=0., flatten_along_zaxis=False):
     '''
-
-    Parameters
-    ----------
-    pos_start
-    direction
-    length
-    radius
-    n_points
-    facecolor
-    edgecolor
-    alpha
-    lw
-    flatten_along_zaxis
-
-    Returns
-    -------
-
+    Helper function to construct polygons from cylinders.
     '''
     x, y, z = _cylinder(pos_start,
                         direction,
@@ -878,11 +956,11 @@ def get_polygons_for_cylinder(pos_start, direction, length, radius, n_points, fa
                        z[0][idx_theta + 1],
                        z[0][idx_theta + 1 + theta_ring.size],
                        z[0][idx_theta + theta_ring.size]]
-            verts_hull.append([zip(x_verts, y_verts, z_verts)])
+            verts_hull.append(list(zip(x_verts, y_verts, z_verts)))
 
     poly3d_hull = []
     for crt_vert in verts_hull:
-        cyl = Poly3DCollection(crt_vert, linewidths=lw)
+        cyl = Poly3DCollection([crt_vert], linewidths=lw)
         cyl.set_facecolor(face_col)
         cyl.set_edgecolor(edge_col)
 
@@ -892,8 +970,8 @@ def get_polygons_for_cylinder(pos_start, direction, length, radius, n_points, fa
     x_verts = x[0][0:theta_ring.size - 1]
     y_verts = y[0][0:theta_ring.size - 1]
     z_verts = z[0][0:theta_ring.size - 1]
-    verts_lowerlid = [zip(x_verts, y_verts, z_verts)]
-    poly3ed_lowerlid = Poly3DCollection(verts_lowerlid, linewidths=lw, zorder=1)
+    verts_lowerlid = list(zip(x_verts, y_verts, z_verts))
+    poly3ed_lowerlid = Poly3DCollection([verts_lowerlid], linewidths=lw, zorder=1)
     poly3ed_lowerlid.set_facecolor(face_col)
     poly3ed_lowerlid.set_edgecolor(edge_col)
 
@@ -901,8 +979,8 @@ def get_polygons_for_cylinder(pos_start, direction, length, radius, n_points, fa
     x_verts = x[0][theta_ring.size:theta_ring.size * 2 - 1]
     y_verts = y[0][theta_ring.size:theta_ring.size * 2 - 1]
     z_verts = z[0][theta_ring.size:theta_ring.size * 2 - 1]
-    verts_upperlid = [zip(x_verts, y_verts, z_verts)]
-    poly3ed_upperlid = Poly3DCollection(verts_upperlid, linewidths=lw, zorder=1)
+    verts_upperlid = list(zip(x_verts, y_verts, z_verts))
+    poly3ed_upperlid = Poly3DCollection([verts_upperlid], linewidths=lw, zorder=1)
     poly3ed_upperlid.set_facecolor(face_col)
     poly3ed_upperlid.set_edgecolor(edge_col)
 

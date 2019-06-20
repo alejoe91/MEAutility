@@ -16,6 +16,7 @@ import os.path
 import copy
 import yaml
 import shutil
+from pathlib import Path
 from distutils.version import StrictVersion
 
 if StrictVersion(yaml.__version__) >= StrictVersion('5.0.0'):
@@ -568,8 +569,9 @@ class MEA(object):
                         stim_points = []
                         cur_point = points[pp]
                         for ii in np.arange(self.number_electrodes):
-                            vs, sp = self.electrodes[ii].field_contribution(cur_point, npoints=self.points_per_electrode,
-                                                                         model=self.model, main_axes=self.main_axes)
+                            vs, sp = self.electrodes[ii].field_contribution(cur_point,
+                                                                            npoints=self.points_per_electrode,
+                                                                            model=self.model, main_axes=self.main_axes)
                             pf += vs
                             if len(sp) != 0:
                                 stim_points.append(sp)
@@ -1160,39 +1162,68 @@ def return_mea_list():
     return sorted(electrode_names)
 
 
-def add_mea(mea_yaml_path):
+def add_mea(mea, electrode_name=None):
     '''
     Adds the mea probe defined by the yaml file in the installation folder.
 
     Parameters
     ----------
-    mea_yaml_file: str
-        Path to yaml file
+    mea: str or MEA object
+        Path to yaml file or MEA instance
+    electrode_name: str
+        Probe name (if not in mea.info)
     '''
-    path = os.path.abspath(mea_yaml_path)
-
-    if path.endswith('.yaml') or path.endswith('.yml') and os.path.isfile(path):
-        with open(path, 'r') as meafile:
-            if use_loader:
-                elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
-            else:
-                elinfo = yaml.load(meafile)
-            if 'pos' not in elinfo.keys():
-                if 'dim' in elinfo.keys():
-                    if elinfo['dim'] != 1 and 'pitch' not in elinfo.keys():
-                        raise AttributeError("The yaml file should contin either a list of 3d or 2d positions 'pos' or "
-                                             "intormation about dimension and pitch ('dim' and 'pitch')")
+    if isinstance(mea, (str, Path)):
+        mea = Path(mea)
+        path = mea.absolute()
+        if path.suffix == '.yaml' or path.suffix == '.yml' and path.is_file():
+            with open(path, 'r') as meafile:
+                if use_loader:
+                    elinfo = yaml.load(meafile, Loader=yaml.FullLoader)
                 else:
+                    elinfo = yaml.load(meafile)
+        if 'pos' not in elinfo.keys():
+            if 'dim' in elinfo.keys():
+                if elinfo['dim'] != 1 and 'pitch' not in elinfo.keys():
                     raise AttributeError("The yaml file should contin either a list of 3d or 2d positions 'pos' or "
-                                         "intormation about dimension and pitch ('dim' and 'pitch') - unless dim=1")
+                                         "intormation about dimension and pitch ('dim' and 'pitch')")
+            else:
+                raise AttributeError("The yaml file should contin either a list of 3d or 2d positions 'pos' or "
+                                     "intormation about dimension and pitch ('dim' and 'pitch') - unless dim=1")
 
         this_dir, this_filename = os.path.split(__file__)
-        shutil.copy(path, os.path.join(this_dir, 'electrodes'))
-        if path.endswith('.yaml'):
-            electrodes = [f[:-5] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
-        elif path.endswith('.yml'):
-            electrodes = [f[:-4] for f in os.listdir(os.path.join(this_dir, "electrodes"))]
-        print('Available MEA: \n', electrodes)
+        shutil.copy(str(path), os.path.join(this_dir, 'electrodes'))
+    elif 'MEA' in str(type(mea)):
+        if 'electrode_name' not in mea.info.keys():
+            if electrode_name is None:
+                raise Exception("'electrode_name' not in mea info. Pleae provide 'electrode_name' argument.")
+        else:
+            electrode_name = mea.info['electrode_name']
+        elinfo = mea.info
+        if 'pos' not in elinfo.keys():
+            if 'dim' in elinfo.keys():
+                if elinfo['dim'] != 1 and 'pitch' not in elinfo.keys():
+                    raise AttributeError("The yaml file should contin either a list of 3d or 2d positions 'pos' or "
+                                         "intormation about dimension and pitch ('dim' and 'pitch')")
+            else:
+                raise AttributeError("The yaml file should contin either a list of 3d or 2d positions 'pos' or "
+                                     "intormation about dimension and pitch ('dim' and 'pitch') - unless dim=1")
+        else:
+            if isinstance(mea.info['pos'], np.ndarray):
+                mea.info['pos'] = mea.info['pos'].tolist()
+
+        this_dir, this_filename = os.path.split(__file__)
+        path = Path(this_dir) / 'electrodes' / Path(electrode_name + '.yaml')
+        with path.open('w') as f:
+            if use_loader:
+                yaml.dump(mea.info, f, Dumper=yaml.Dumper)
+            else:
+                yaml.dump(mea.info, f)
+
+    else:
+        raise Exception("'mea' can be either a path to a yaml file or a MEA object")
+
+    print(return_mea_list())
 
 
 def remove_mea(mea_name):

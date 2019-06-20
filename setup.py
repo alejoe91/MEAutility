@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
 
+d = {}
+exec(open("MEAutility/version.py").read(), None, d)
+version = d['version']
 long_description = open("README.md").read()
 
 entry_points = None
@@ -9,7 +12,7 @@ install_requires = []
 
 setup(
     name="MEAutility",
-    version="1.3.0",
+    version=version,
     author="Alessio Buccino",
     author_email="alessiob@ifi.uio.no",
     description="Python package for multi-electrode array (MEA) handling and stimulation.",
