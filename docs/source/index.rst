@@ -53,6 +53,7 @@ and plotting functions.
    mea_handling
    mea_stimulation
    mea_plotting
+   api
 
 
 Contact
