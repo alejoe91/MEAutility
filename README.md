@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/alejoe91/MEAutility.svg?branch=master)](https://travis-ci.org/alejoe91/MEAutility)
+[![Build Status](https://travis-ci.org/alejoe91/MEAutility.svg?branch=master)](https://travis-ci.org/alejoe91/MEAutility) [![PyPI version](https://badge.fury.io/py/MEAutility.svg)](https://badge.fury.io/py/MEAutility)
 
 # MEAutility
 
