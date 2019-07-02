@@ -1,4 +1,5 @@
 from __future__ import print_function
+
 """
 
 Collection of classes and functions for MEA stimulation
@@ -214,10 +215,10 @@ class Electrode:
                                     # rotate to align to main_axes and keep uniform distribution
                                     M = np.array([main_axes[0], main_axes[1], self.normal])
                                     arr_rot = np.dot(M.T, arr)
-                                    point = np.cross(arr_rot, self.normal) # + self.position
+                                    point = np.cross(arr_rot, self.normal)  # + self.position
                                     if np.abs(np.dot(point, main_axes[0])) < self.size and \
                                             np.abs(np.dot(point, main_axes[1])) < self.size:
-                                        placed=True
+                                        placed = True
                                         stim_points.append(point + self.position)
                             elif self.shape == 'rect':
                                 if main_axes is None:
@@ -229,17 +230,17 @@ class Electrode:
                                     # rotate to align to main_axes and keep uniform distribution
                                     M = np.array([main_axes[0], main_axes[1], self.normal])
                                     arr_rot = np.dot(M.T, arr)
-                                    point = np.cross(arr_rot, self.normal) # + self.position
+                                    point = np.cross(arr_rot, self.normal)  # + self.position
                                     if np.abs(np.dot(point, main_axes[0])) < self.size and \
                                             np.abs(np.dot(point, main_axes[1])) < self.size:
-                                        placed=True
+                                        placed = True
                                         stim_points.append(point + self.position)
                             elif self.shape == 'circle':
                                 while not placed:
                                     arr = (2 * self.size) * np.random.rand(3) - self.size
                                     point = np.cross(arr, self.normal) + self.position
                                     if np.linalg.norm(point - self.position) < self.size:
-                                        placed=True
+                                        placed = True
                                         stim_points.append(point)
                             else:
                                 raise Exception("'shape' can be 'square', 'rect', or 'circle'")
@@ -317,6 +318,13 @@ class MEA(object):
         else:
             self.model = 'semi'
 
+        if self.plane == 'xy':
+            self.main_axes = np.array([[1, 0, 0], [0, 1, 0]])
+        elif self.plane == 'yz':
+            self.main_axes = np.array([[0, 1, 0], [0, 0, 1]])
+        elif self.plane == 'xz':
+            self.main_axes = np.array([[1, 0, 0], [0, 0, 1]])
+
         # Assumption (electrodes on the same plane)
         if self.number_electrodes > 1:
             if normal is None:
@@ -330,15 +338,6 @@ class MEA(object):
                     self.normal /= np.linalg.norm(self.normal)
         else:
             self.normal = np.cross(self.main_axes[0], self.main_axes[1])
-
-        # print("Model is set to %s" % self.model)
-
-        if self.plane == 'xy':
-            self.main_axes = np.array([[1, 0, 0], [0, 1, 0]])
-        elif self.plane == 'yz':
-            self.main_axes = np.array([[0, 1, 0], [0, 0, 1]])
-        elif self.plane == 'xz':
-            self.main_axes = np.array([[1, 0, 0], [0, 0, 1]])
 
         self.electrodes = [Electrode(pos, normal=self.normal, sigma=self.sigma, shape=self.shape,
                                      size=self.size) for pos in positions]
@@ -378,7 +377,7 @@ class MEA(object):
 
     def _set_normal(self, normal):
         for i, el in enumerate(self.electrodes):
-            el.normal = normal/np.linalg.norm(normal)
+            el.normal = normal / np.linalg.norm(normal)
 
     def _get_currents(self):
         curr = [el.current for el in self.electrodes]
@@ -460,7 +459,8 @@ class MEA(object):
         '''
         if isinstance(current_values, (list, np.ndarray)):
             if len(current_values) != self.number_electrodes:
-                raise Exception("Number of currents should be equal to number of electrodes %d" % self.number_electrodes)
+                raise Exception(
+                    "Number of currents should be equal to number of electrodes %d" % self.number_electrodes)
             else:
                 for i, el in enumerate(self.electrodes):
                     el.current = current_values[i]
@@ -485,7 +485,7 @@ class MEA(object):
                 if el_i == el_id:
                     el.current = np.array(current_value)
                 elif isinstance(el.current, (float, int, np.float, np.integer)):
-                        el.current = np.array([el.current] * len(current_value))
+                    el.current = np.array([el.current] * len(current_value))
                 elif isinstance(el.current, (list, np.ndarray)):
                     if len(el.current) != len(current_value):
                         el.current = np.array([el.current[0]] * len(current_value))
@@ -499,7 +499,7 @@ class MEA(object):
         amp: float
             Amplitude to reset currents (default=0)
         '''
-        currents = amp*np.ones(self.number_electrodes)
+        currents = amp * np.ones(self.number_electrodes)
         self.currents = currents
 
     def compute_field(self, points, return_stim_points=False, seed=None, verbose=False):
@@ -564,7 +564,7 @@ class MEA(object):
                     vp = np.zeros(points.shape[0])
                     for pp in np.arange(len(vp)):
                         if verbose:
-                            print("Computing point: ", pp+1)
+                            print("Computing point: ", pp + 1)
                         pf = 0
                         stim_points = []
                         cur_point = points[pp]
@@ -581,12 +581,13 @@ class MEA(object):
                     stim_points = []
                     for pp in np.arange(len(vp)):
                         if verbose:
-                            print("Computing point: ", pp+1)
+                            print("Computing point: ", pp + 1)
                         pf = np.zeros(len(c))
                         stim_points = []
                         cur_point = points[pp]
                         for ii in np.arange(self.number_electrodes):
-                            vs, sp = self.electrodes[ii].field_contribution(cur_point, npoints=self.points_per_electrode,
+                            vs, sp = self.electrodes[ii].field_contribution(cur_point,
+                                                                            npoints=self.points_per_electrode,
                                                                             model=self.model, main_axes=self.main_axes,
                                                                             seed=seed)
                             pf += vs
@@ -595,7 +596,7 @@ class MEA(object):
                         vp[pp] = pf
         stim_points = np.array(stim_points)
         if len(stim_points.shape) == 3:
-            stim_points = np.reshape(stim_points, (stim_points.shape[0]*stim_points.shape[1], stim_points.shape[2]))
+            stim_points = np.reshape(stim_points, (stim_points.shape[0] * stim_points.shape[1], stim_points.shape[2]))
         if return_stim_points:
             return vp, stim_points
         else:
@@ -868,7 +869,6 @@ def get_positions(elinfo, center=True):
     # method 1: positions in elinfo
     if 'pos' in elinfo.keys():
         pos = np.array(elinfo['pos'])
-        nelec = pos.shape[0]
         if len(pos.shape) == 1:
             if len(pos) == 2:
                 pos2d = np.array([pos])
@@ -902,9 +902,8 @@ def get_positions(elinfo, center=True):
             elif pos.shape[1] != 3:
                 raise AttributeError('pos attribute should be a list of 2D or 3D points')
         electrode_pos = True
-
     # method 2: dim, pithch, stagger
-    if 'dim' in elinfo.keys():
+    elif 'dim' in elinfo.keys():
         dim = elinfo['dim']
         if dim == 1:
             if 'plane' not in elinfo.keys():
@@ -1093,7 +1092,7 @@ def return_mea(electrode_name=None, info=None):
         if 'center' in elinfo.keys():
             center = elinfo['center']
         else:
-            center=True
+            center = True
         pos = get_positions(elinfo, center=center)
         # create MEA object
         if check_if_rect(elinfo):

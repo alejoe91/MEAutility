@@ -1,0 +1,11 @@
+description: Single electrode / monotrode.
+electrode_name: monotrode
+plane: xy
+pos:
+- - 0
+  - 0
+  - 0
+shape: circle
+size: 10
+sortlist: null
+type: wire

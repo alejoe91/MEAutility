@@ -530,7 +530,8 @@ def plot_v_surf(mea, v_plane=None, x_bound=None, y_bound=None, z_bound=None, off
 
 
 def plot_mea_recording(signals, mea, colors=None, lw=1, ax=None, spacing=None,
-                       scalebar=False, time=None, vscale=None, hide_axis=True):
+                       scalebar=False, time=None, vscale=None, hide_axis=True,
+                       axis_equal=False):
     '''
     Plots mea signals at electrode locations.
 
@@ -556,6 +557,8 @@ def plot_mea_recording(signals, mea, colors=None, lw=1, ax=None, spacing=None,
         The scale to use for the signal (default .5 times the maximum signal)
     hide_axis: bool
         If True (default), axis are hidden
+    axis_equal: bool
+        If True, axis aspect is set to 'equal'
 
     Returns
     -------
@@ -568,6 +571,7 @@ def plot_mea_recording(signals, mea, colors=None, lw=1, ax=None, spacing=None,
         ax = fig.add_subplot(1,1,1, frameon=False)
         no_tight = False
     else:
+        fig = ax.get_figure()
         no_tight = True
 
     mea_pos = np.array([np.dot(mea.positions, mea.main_axes[0]), np.dot(mea.positions, mea.main_axes[1])]).T
@@ -644,7 +648,9 @@ def plot_mea_recording(signals, mea, colors=None, lw=1, ax=None, spacing=None,
 
     if not no_tight:
         fig.tight_layout()
-    ax.axis('equal')
+
+    if axis_equal:
+        ax.axis('equal')
 
     return ax
 
