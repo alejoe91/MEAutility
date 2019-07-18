@@ -5,5 +5,6 @@ pitch: [25.0, 18.0]
 dim: [10, 12, 10]
 stagger: -12.5
 size: 7.5
+plane: yz
 shape: circle
 type: mea

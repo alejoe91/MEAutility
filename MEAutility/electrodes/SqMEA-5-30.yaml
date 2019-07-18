@@ -4,5 +4,6 @@ sortlist: null
 pitch: 30
 dim: 5
 size: 12.5
+plane: yz
 shape: square
 type: mea

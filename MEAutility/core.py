@@ -604,7 +604,7 @@ class MEA(object):
 
     def save_currents(self, filename):
         '''
-        Saves MEA currents to file in .npy fornat
+        Saves MEA currents to file in .npy format
 
         Parameters
         ----------
@@ -618,6 +618,7 @@ class MEA(object):
     def load_currents(self, filename):
         '''
         Load currents from file
+
         Parameters
         ----------
         filename: str
@@ -636,6 +637,7 @@ class MEA(object):
     def rotate(self, axis, theta):
         '''
         Rotates the MEA in 3d along a specified axis
+
         Parameters
         ----------
         axis: np.array
@@ -643,8 +645,11 @@ class MEA(object):
         theta: float
             Angle in degrees counterclock-wise
         '''
+        center_probe = np.mean(self.positions, axis=0, keepdims=True)
+        center_positions = self.positions - center_probe
+
         M = rotation_matrix(axis, np.deg2rad(theta))
-        rot_pos = np.dot(M, self.positions.T).T
+        rot_pos = np.dot(M, center_positions.T).T
         rot_pos = np.round(rot_pos, 3)
         rot_axis = np.dot(M, self.main_axes.T).T
         self.main_axes = np.round(rot_axis, 3)
@@ -652,6 +657,7 @@ class MEA(object):
         self.normal = np.round(normal, 3)
         self.normal /= np.linalg.norm(self.normal)
 
+        rot_pos += center_probe
         self._set_positions(rot_pos)
         self._set_normal(normal)
 
@@ -777,14 +783,14 @@ class RectMEA(MEA):
 
 def rotation_matrix(axis, theta):
     '''
-    Returns 3D rotation matrix.
+    Returns 3D rotation matrix
 
     Parameters
     ----------
     axis: np.array or list
         3D axis of rotation
     theta: float
-        Angle in radiants for rotation anti-clockwise
+        Angle in radians for rotation anti-clockwise
 
     Returns
     -------
