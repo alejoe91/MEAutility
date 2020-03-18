@@ -27,7 +27,8 @@ else:
 
 
 class Electrode:
-    def __init__(self, position=None, normal=None, current=None, sigma=None, max_field=None, shape=None, size=None):
+    def __init__(self, position=None, normal=None, current=0, sigma=0.3, max_field=1000, shape='square', size=5,
+                 main_axes=None):
         '''
         Instantiates and Electrode object
 
@@ -49,6 +50,8 @@ class Electrode:
             If 'shape' is circle it indicates the radius.
             If 'shape' is square is half the side length.
             If 'shape' is 'rect' it must have length 2 and it indicates half width and half height.
+        main_axes: array
+            2x3 array indicating the plane on which the electrode lie
         '''
         # convert to numpy array
         if type(position) == list:
@@ -66,12 +69,7 @@ class Electrode:
             self.current = current
         else:
             self.current = 0
-        if normal is None and self.points > 1:
-            raise Exception('Provide normal direction to electrode')
-        elif normal is not None:
-            self.normal = normal
-        else:
-            self.normal = None
+        self.normal = normal
         if shape is not None:
             self.shape = shape
         else:
@@ -83,6 +81,7 @@ class Electrode:
         if self.shape == 'rect':
             assert isinstance(self.size, (list, np.ndarray)) and len(self.size) == 2, \
                 "If shape is 'rect', 'size' should have len equal 2'"
+        self.main_axes = main_axes
 
     def field_contribution(self, pos, npoints=1, model='inf', main_axes=None, seed=None):
         '''
@@ -125,57 +124,13 @@ class Electrode:
                     else:
                         print("WARNING: point and electrode location are coincident! Field set to MAX_FIELD: ",
                               self.max_field)
-                        potentiel = self.max_field
+                        potential = self.max_field
                 else:
-                    stim_points = []
-                    spl = 0
-                    for p in np.arange(npoints):
-                        placed = False
-                        if self.shape == 'square':
-                            if main_axes is None:
-                                raise Exception("If electrode is 'square' main_axes should be provided")
-                            while not placed:
-                                arr = (2 * self.size) * np.random.rand(3) - self.size
-                                # rotate to align to main_axes and keep uniform distribution
-                                M = np.array([main_axes[0], main_axes[1], self.normal])
-                                arr_rot = np.dot(M.T, arr)
-                                point = np.cross(arr_rot, self.normal)  # + self.position
-                                if np.abs(np.dot(point, main_axes[0])) < self.size and \
-                                        np.abs(np.dot(point, main_axes[1])) < self.size:
-                                    placed = True
-                                    stim_points.append(point + self.position)
-                        elif self.shape == 'rect':
-                            if main_axes is None:
-                                raise Exception("If electrode is 'rect' main_axes should be provided")
-                            assert isinstance(self.size, (list, np.ndarray)) and len(self.size) == 2, \
-                                "If shape is 'rect', 'size' should have len equal 2'"
-                            while not placed:
-                                arr = (2 * np.max(self.size)) * np.random.rand(3) - np.max(self.size)
-                                # rotate to align to main_axes and keep uniform distribution
-                                M = np.array([main_axes[0], main_axes[1], self.normal])
-                                arr_rot = np.dot(M.T, arr)
-                                point = np.cross(arr_rot, self.normal)  # + self.position
-                                if np.abs(np.dot(point, main_axes[0])) < self.size[0] and \
-                                        np.abs(np.dot(point, main_axes[1])) < self.size[1]:
-                                    placed = True
-                                    stim_points.append(point + self.position)
-                        elif self.shape == 'circle':
-                            while not placed:
-                                arr = (2 * self.size) * np.random.rand(3) - self.size
-                                M = np.array([main_axes[0], main_axes[1], self.normal])
-                                arr_rot = np.dot(M.T, arr)
-                                point = np.cross(arr_rot, self.normal)
-                                if np.linalg.norm(point) < self.size:
-                                    placed = True
-                                    stim_points.append(point + self.position)
-                        else:
-                            raise Exception("'shape' can be 'square', 'rect', or 'circle'")
-
-                    stim_points = np.array(stim_points)
+                    assert self.main_axes is not None, "For 'npoints' > 1 the electrode main_axes must be set"
+                    stim_points = self.get_n_points(npoints)
                     split_current = float(self.current) / npoints
                     potential = 0
                     for el_pos in stim_points:
-                        spl += split_current
                         if any(pos != el_pos):
                             if model == 'inf':
                                 potential += split_current / (4 * np.pi * self.sigma * la.norm(pos - el_pos))
@@ -204,48 +159,8 @@ class Electrode:
                                   self.max_field)
                             potential = np.array([self.max_field] * len(self.current))
                     else:
-                        stim_points = []
-                        for p in np.arange(npoints):
-                            placed = False
-                            if self.shape == 'square':
-                                if main_axes is None:
-                                    raise Exception("If electrode is 'square' main_axes should be provided")
-                                while not placed:
-                                    arr = (2 * self.size) * np.random.rand(3) - self.size
-                                    # rotate to align to main_axes and keep uniform distribution
-                                    M = np.array([main_axes[0], main_axes[1], self.normal])
-                                    arr_rot = np.dot(M.T, arr)
-                                    point = np.cross(arr_rot, self.normal)  # + self.position
-                                    if np.abs(np.dot(point, main_axes[0])) < self.size and \
-                                            np.abs(np.dot(point, main_axes[1])) < self.size:
-                                        placed = True
-                                        stim_points.append(point + self.position)
-                            elif self.shape == 'rect':
-                                if main_axes is None:
-                                    raise Exception("If electrode is 'rect' main_axes should be provided")
-                                assert isinstance(self.size, (list, np.ndarray)) and len(self.size) == 2, \
-                                    "If shape is 'rect', 'size' should have len equal 2'"
-                                while not placed:
-                                    arr = (2 * self.size) * np.random.rand(3) - self.size
-                                    # rotate to align to main_axes and keep uniform distribution
-                                    M = np.array([main_axes[0], main_axes[1], self.normal])
-                                    arr_rot = np.dot(M.T, arr)
-                                    point = np.cross(arr_rot, self.normal)  # + self.position
-                                    if np.abs(np.dot(point, main_axes[0])) < self.size and \
-                                            np.abs(np.dot(point, main_axes[1])) < self.size:
-                                        placed = True
-                                        stim_points.append(point + self.position)
-                            elif self.shape == 'circle':
-                                while not placed:
-                                    arr = (2 * self.size) * np.random.rand(3) - self.size
-                                    point = np.cross(arr, self.normal) + self.position
-                                    if np.linalg.norm(point - self.position) < self.size:
-                                        placed = True
-                                        stim_points.append(point)
-                            else:
-                                raise Exception("'shape' can be 'square', 'rect', or 'circle'")
-
-                        stim_points = np.array(stim_points)
+                        assert self.main_axes is not None, "For 'npoints' > 1 the electrode main_axes must be set"
+                        stim_points = self.get_n_points(npoints)
                         split_current = c / npoints
                         for el_pos in stim_points:
                             if any(pos != el_pos):
@@ -261,6 +176,49 @@ class Electrode:
                     potential[i] = 0
                     stim_points = np.zeros((npoints, 3))
         return potential, stim_points
+
+    def get_n_points(self, npoints):
+        points = np.zeros((npoints, 3))
+        for p in np.arange(npoints):
+            placed = False
+            if self.shape == 'square':
+                while not placed:
+                    arr = (2 * self.size) * np.random.rand(3) - self.size
+                    # rotate to align to main_axes and keep uniform distribution
+                    M = np.array([self.main_axes[0], self.main_axes[1], self.normal])
+                    arr_rot = np.dot(M.T, arr)
+                    point = np.cross(arr_rot, self.normal)  # + self.position
+                    if np.abs(np.dot(point, self.main_axes[0])) < self.size and \
+                            np.abs(np.dot(point, self.main_axes[1])) < self.size:
+                        placed = True
+                        points[p] = point + self.position
+            elif self.shape == 'rect':
+                assert isinstance(self.size, (list, np.ndarray)) and len(self.size) == 2, \
+                    "If shape is 'rect', 'size' should have len equal 2'"
+                while not placed:
+                    arr = (2 * np.max(self.size)) * np.random.rand(3) - np.max(self.size)
+                    # rotate to align to main_axes and keep uniform distribution
+                    M = np.array([self.main_axes[0], self.main_axes[1], self.normal])
+                    arr_rot = np.dot(M.T, arr)
+                    point = np.cross(arr_rot, self.normal)  # + self.position
+                    if np.abs(np.dot(point, self.main_axes[0])) < self.size[0] and \
+                            np.abs(np.dot(point, self.main_axes[1])) < self.size[1]:
+                        placed = True
+                        points[p] = point + self.position
+            elif self.shape == 'circle':
+                while not placed:
+                    arr = (2 * self.size) * np.random.rand(3) - self.size
+                    M = np.array([self.main_axes[0], self.main_axes[1], self.normal])
+                    arr_rot = np.dot(M.T, arr)
+                    point = np.cross(arr_rot, self.normal)
+                    if np.linalg.norm(point) < self.size:
+                        placed = True
+                        points[p] = point + self.position
+            else:
+                raise Exception("'shape' can be 'square', 'rect', or 'circle'")
+
+        return points
+
 
 
 class MEA(object):
@@ -340,7 +298,7 @@ class MEA(object):
             self.normal = np.cross(self.main_axes[0], self.main_axes[1])
 
         self.electrodes = [Electrode(pos, normal=self.normal, sigma=self.sigma, shape=self.shape,
-                                     size=self.size) for pos in positions]
+                                     size=self.size, main_axes=self.main_axes) for pos in positions]
         self.number_electrodes = len(self.electrodes)
 
         self._positions = None
@@ -601,6 +559,34 @@ class MEA(object):
             return vp, stim_points
         else:
             return vp
+
+    def get_random_points_inside(self, npoints, seed=None):
+        '''
+        Returns 'npoints' random positions inside each electrode
+
+        Parameters
+        ----------
+        npoints: int
+            Number of points for each electrode
+        seed: int
+            Random seed
+
+        Returns
+        -------
+        random_points: np.array
+            Array with (n_electrodes, n_points, 3) dimensions with random positions
+
+        '''
+        if seed is None:
+            seed = np.random.randint(10000)
+        np.random.seed(seed)
+
+        random_positions = np.zeros((self.number_electrodes, npoints, 3))
+
+        for i, el in enumerate(self.electrodes):
+            random_positions[i] = el.get_n_points(npoints)
+
+        return random_positions
 
     def save_currents(self, filename):
         '''
