@@ -7,15 +7,17 @@ import os
 
 
 def test_electrodes_field_contribution():
-    elec_c = Electrode(position=[100,100,100], normal=[1,0,0], current=10, size=10, shape='circle')
-    v_1_c, _ = elec_c.field_contribution(pos=[150,100,100], npoints=1, main_axes=[[0,1,0],[0,0,1]])
-    v_5_c, _ = elec_c.field_contribution(pos=[150, 100, 100], npoints=5, main_axes=[[0,1,0],[0,0,1]])
-    v_10_c, _ = elec_c.field_contribution(pos=[150, 100, 100], npoints=10, main_axes=[[0,1,0],[0,0,1]])
+    elec_c = Electrode(position=[100,100,100], normal=[1,0,0], current=10, size=10, shape='circle',
+                       main_axes=[[0,1,0],[0,0,1]])
+    v_1_c, _ = elec_c.field_contribution(pos=[150,100,100], npoints=1)
+    v_5_c, _ = elec_c.field_contribution(pos=[150, 100, 100], npoints=5)
+    v_10_c, _ = elec_c.field_contribution(pos=[150, 100, 100], npoints=10)
 
-    elec_s = Electrode(position=[100, 100, 100], normal=[1, 0, 0], current=10, size=10, shape='square')
-    v_1_s, _ = elec_s.field_contribution(pos=[150, 100, 100], npoints=1, main_axes=[[0, 1, 0], [0, 0, 1]])
-    v_5_s, _ = elec_s.field_contribution(pos=[150, 100, 100], npoints=5, main_axes=[[0, 1, 0], [0, 0, 1]])
-    v_10_s, _ = elec_s.field_contribution(pos=[150, 100, 100], npoints=10, main_axes=[[0, 1, 0], [0, 0, 1]])
+    elec_s = Electrode(position=[100, 100, 100], normal=[1, 0, 0], current=10, size=10, shape='square',
+                       main_axes=[[0, 1, 0], [0, 0, 1]])
+    v_1_s, _ = elec_s.field_contribution(pos=[150, 100, 100], npoints=1)
+    v_5_s, _ = elec_s.field_contribution(pos=[150, 100, 100], npoints=5)
+    v_10_s, _ = elec_s.field_contribution(pos=[150, 100, 100], npoints=10)
 
     assert np.isclose([v_1_c], [v_10_c], rtol=0.1)
     assert np.isclose([v_1_c], [v_5_c], rtol=0.1)
@@ -35,6 +37,12 @@ def test_return_mea():
     assert mea.plane == 'yz'
     assert mea.type == 'mea'
     assert mea.size == 7.5
+
+def test_get_n_points():
+    mea = mu.return_mea('Neuronexus-32')
+    points = mea.get_random_points_inside(20)
+    for (pos, p) in zip(mea.positions, points):
+        assert np.all([np.linalg.norm(p_i - pos) <= mea.size for p_i in p])
 
 
 def test_mea_set_currents():
