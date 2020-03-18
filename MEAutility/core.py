@@ -126,7 +126,7 @@ class Electrode:
                               self.max_field)
                         potential = self.max_field
                 else:
-                    assert self.main_axes is not None
+                    assert self.main_axes is not None, "For 'npoints' > 1 the electrode main_axes must be set"
                     stim_points = self.get_n_points(npoints)
                     split_current = float(self.current) / npoints
                     potential = 0
@@ -159,6 +159,7 @@ class Electrode:
                                   self.max_field)
                             potential = np.array([self.max_field] * len(self.current))
                     else:
+                        assert self.main_axes is not None, "For 'npoints' > 1 the electrode main_axes must be set"
                         stim_points = self.get_n_points(npoints)
                         split_current = c / npoints
                         for el_pos in stim_points:
@@ -561,6 +562,7 @@ class MEA(object):
 
     def get_random_points_inside(self, npoints, seed=None):
         '''
+        Returns 'npoints' random positions inside each electrode
 
         Parameters
         ----------
