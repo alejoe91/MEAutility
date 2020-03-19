@@ -111,6 +111,7 @@ class Electrode:
         '''
         if seed is not None:
             np.random.seed(seed)
+        assert np.array(self.sigma).size == 1, "Extracellular potentials can be computed on isotropic medium only"
         potential, stim_points = [], []
         if isinstance(self.current, (float, int, np.float, np.integer)):
             if self.current != 0:
@@ -241,12 +242,15 @@ class MEA(object):
 
         '''
         self.number_electrodes = len(positions)
-        if sigma == None:
+        if positions.size == 1:
+            assert len(positions) == 3
+            positions = np.array([positions])
+        if sigma is None:
             self.sigma = 0.3
         else:
-            self.sigma = float(sigma)
+            self.sigma = sigma
 
-        if points_per_electrode == None:
+        if points_per_electrode is None:
             self.points_per_electrode = 1
         else:
             self.points_per_electrode = int(points_per_electrode)
@@ -286,19 +290,23 @@ class MEA(object):
         # Assumption (electrodes on the same plane)
         if self.number_electrodes > 1:
             if normal is None:
-                self.normal = np.cross(positions[0], positions[1])
-                self.normal /= np.linalg.norm(self.normal)
+                normal = np.cross(positions[0], positions[1])
+                if np.linalg.norm(normal) > 0:
+                    normal /= np.linalg.norm(normal)
+                    self.normal = np.array([normal] * self.number_electrodes)
+                else:
+                    self.normal = [None] * self.number_electrodes
             else:
-                if isinstance(normal, (list, np.ndarray)):
+                if len(normal) == self.number_electrodes and len(normal[0]) == 3:
                     self.normal = normal
                 else:
-                    self.normal = np.cross(positions[0], positions[1])
-                    self.normal /= np.linalg.norm(self.normal)
+                    assert len(normal) == 3
+                    self.normal = np.array([normal] * self.number_electrodes)
         else:
-            self.normal = np.cross(self.main_axes[0], self.main_axes[1])
+            self.normal = [np.cross(self.main_axes[0], self.main_axes[1])]
 
-        self.electrodes = [Electrode(pos, normal=self.normal, sigma=self.sigma, shape=self.shape,
-                                     size=self.size, main_axes=self.main_axes) for pos in positions]
+        self.electrodes = [Electrode(pos, normal=self.normal[i], sigma=self.sigma, shape=self.shape,
+                                     size=self.size, main_axes=self.main_axes) for i, pos in enumerate(positions)]
         self.number_electrodes = len(self.electrodes)
 
         self._positions = None
