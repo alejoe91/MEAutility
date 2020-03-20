@@ -28,7 +28,7 @@ else:
 
 class Electrode:
     def __init__(self, position=None, normal=None, current=0, sigma=0.3, max_field=1000, shape='square', size=5,
-                 main_axes=None):
+                 main_axes=None, mapping=None):
         '''
         Instantiates and Electrode object
 
@@ -52,6 +52,8 @@ class Electrode:
             If 'shape' is 'rect' it must have length 2 and it indicates half width and half height.
         main_axes: array
             2x3 array indicating the plane on which the electrode lie
+        mapping: np.array
+            Mapping between electrode and a set of points
         '''
         # convert to numpy array
         if type(position) == list:
@@ -82,14 +84,16 @@ class Electrode:
             assert isinstance(self.size, (list, np.ndarray)) and len(self.size) == 2, \
                 "If shape is 'rect', 'size' should have len equal 2'"
         self.main_axes = main_axes
+        self.mapping = None
+        self.stim_points = None
 
-    def field_contribution(self, pos, npoints=1, model='inf', main_axes=None, seed=None):
+    def field_contribution(self, points, npoints=1, model='inf', seed=None):
         '''
         Computes extracellular potential arising from stimulating current
 
         Parameters
         ----------
-        pos: np.array or list
+        points: np.array or list
             It can be a single 3d point or an array/list of positions (n_points, 3)
         npoints: int
             Number of points to split the current within the electrode. It is used to simulate the spatial extent
@@ -112,71 +116,69 @@ class Electrode:
         if seed is not None:
             np.random.seed(seed)
         assert np.array(self.sigma).size == 1, "Extracellular potentials can be computed on isotropic medium only"
-        potential, stim_points = [], []
+
+        if len(np.array(points).shape) == 1:
+            points = np.array([points])
+
         if isinstance(self.current, (float, int, np.float, np.integer)):
             if self.current != 0:
-                if npoints == 1:
-                    stim_points = self.position
-                    if any(pos != self.position):
+                if self.mapping is not None:
+                    if self.mapping.shape != (len(points), npoints):
+                        # compute new mapping
+                        self.compute_mapping(points, npoints, model=model, mapping_array=None, seed=seed)
+                else:
+                    self.compute_mapping(points, npoints, model=model, mapping_array=None, seed=seed)
+                assert self.mapping is not None
+                potential = np.squeeze(self.mapping @ np.tile(self.current, len(self.stim_points))[:, np.newaxis])
+            else:
+                potential = np.array([0])
+        elif isinstance(self.current, (list, np.ndarray)):
+            potential = np.zeros((len(points), len(self.current)))
+            for i, c in enumerate(self.current):
+                if c != 0:
+                    if self.mapping is not None:
+                        if self.mapping.shape != (len(points), npoints):
+                            # compute new mapping
+                            self.compute_mapping(points, npoints, model=model, mapping_array=None, seed=seed)
+                    else:
+                        self.compute_mapping(points, npoints, model=model, mapping_array=None, seed=seed)
+                    assert self.mapping is not None
+                    potential[:, i] = np.squeeze(self.mapping @ np.tile(c, len(self.stim_points))[:, np.newaxis])
+                else:
+                    potential[:, i] = np.zeros(len(points))
+        potential = np.squeeze(potential)
+        return potential
+
+    def compute_mapping(self, points, npoints=1, model='inf', mapping_array=None, seed=None):
+        if seed is not None:
+            np.random.seed(seed)
+        if mapping_array is not None:
+            self.mapping = mapping_array
+        else:
+            mapping = np.zeros((len(points), npoints))
+            assert np.array(self.sigma).size == 1, "Extracellular potentials can be computed on isotropic medium only"
+            if npoints == 1:
+                stim_points = np.array([self.position])
+                split_current = 1
+            else:
+                assert self.main_axes is not None, "For 'npoints' > 1 the electrode main_axes must be set"
+                stim_points = self.get_n_points(npoints)
+                split_current = 1. / npoints
+            for i_p, pos in enumerate(points):
+                for i_e, el_pos in enumerate(stim_points):
+                    if any(pos != el_pos):
                         if model == 'inf':
-                            potential = self.current / (4 * np.pi * self.sigma * la.norm(pos - self.position))
+                            mapping[i_p, i_e] = split_current / (4 * np.pi * self.sigma * la.norm(pos - el_pos))
                         elif model == 'semi':
-                            potential = self.current / (2 * np.pi * self.sigma * la.norm(pos - self.position))
+                            mapping[i_p, i_e] = split_current / (2 * np.pi * self.sigma * la.norm(pos - el_pos))
+                        else:
+                            raise Exception("'model' can be 'inf' or 'semi'")
                     else:
                         print("WARNING: point and electrode location are coincident! Field set to MAX_FIELD: ",
                               self.max_field)
-                        potential = self.max_field
-                else:
-                    assert self.main_axes is not None, "For 'npoints' > 1 the electrode main_axes must be set"
-                    stim_points = self.get_n_points(npoints)
-                    split_current = float(self.current) / npoints
-                    potential = 0
-                    for el_pos in stim_points:
-                        if any(pos != el_pos):
-                            if model == 'inf':
-                                potential += split_current / (4 * np.pi * self.sigma * la.norm(pos - el_pos))
-                            elif model == 'semi':
-                                potential += split_current / (2 * np.pi * self.sigma * la.norm(pos - el_pos))
-                        else:
-                            print("WARNING: point and electrode location are coincident! Field set to MAX_FIELD: ",
-                                  self.max_field)
-                            potential += self.max_field
-            else:
-                potential = 0
-        elif isinstance(self.current, (list, np.ndarray)):
-            potential = np.zeros(len(self.current))
-            for i, c in enumerate(self.current):
-                if c != 0:
-                    if npoints == 1:
-                        stim_points = self.position
-                        if any(pos != self.position):
-                            for i, c in enumerate(self.current):
-                                if model == 'inf':
-                                    potential[i] = c / (4 * np.pi * self.sigma * la.norm(pos - self.position))
-                                elif model == 'semi':
-                                    potential[i] = c / (2 * np.pi * self.sigma * la.norm(pos - self.position))
-                        else:
-                            print("WARNING: point and electrode location are coincident! Field set to MAX_FIELD: ",
-                                  self.max_field)
-                            potential = np.array([self.max_field] * len(self.current))
-                    else:
-                        assert self.main_axes is not None, "For 'npoints' > 1 the electrode main_axes must be set"
-                        stim_points = self.get_n_points(npoints)
-                        split_current = c / npoints
-                        for el_pos in stim_points:
-                            if any(pos != el_pos):
-                                if model == 'inf':
-                                    potential[i] += split_current / (4 * np.pi * self.sigma * la.norm(pos - el_pos))
-                                elif model == 'semi':
-                                    potential[i] += split_current / (2 * np.pi * self.sigma * la.norm(pos - el_pos))
-                            else:
-                                print("WARNING: point and electrode location are coincident! Field set to MAX_FIELD: ",
-                                      self.max_field)
-                                potential[i] += self.max_field
-                else:
-                    potential[i] = 0
-                    stim_points = np.zeros((npoints, 3))
-        return potential, stim_points
+                        mapping[i_e, i_p] = self.max_field
+            self.mapping = mapping
+            self.stim_points = stim_points
 
     def get_n_points(self, npoints):
         points = np.zeros((npoints, 3))
@@ -223,7 +225,7 @@ class Electrode:
 
 
 class MEA(object):
-    def __init__(self, positions, info, normal=None, points_per_electrode=None, sigma=0.3):
+    def __init__(self, positions, info, normal=None, points_per_electrode=1, sigma=0.3):
         '''
         Intantiates a MEA object
 
@@ -344,6 +346,10 @@ class MEA(object):
     def _set_normal(self, normal):
         for i, el in enumerate(self.electrodes):
             el.normal = normal / np.linalg.norm(normal)
+
+    def _set_main_axes(self, main_axes):
+        for i, el in enumerate(self.electrodes):
+            el.main_axes = main_axes
 
     def _get_currents(self):
         curr = [el.current for el in self.electrodes]
@@ -468,7 +474,7 @@ class MEA(object):
         currents = amp * np.ones(self.number_electrodes)
         self.currents = currents
 
-    def compute_field(self, points, return_stim_points=False, seed=None, verbose=False):
+    def compute_field(self, points, return_stim_points=False, points_per_electrode=1, seed=None):
         '''
         Computes extracellular potential from stimulating currents.
 
@@ -490,7 +496,12 @@ class MEA(object):
         stim_points: np.array
             Stimulating point(s)
         '''
+        if seed is not None:
+            np.random.seed(seed)
         c = self.electrodes[0].current
+
+        if points_per_electrode != self.points_per_electrode:
+            self.points_per_electrode = points_per_electrode
 
         if isinstance(points, list):
             points = np.array(points)
@@ -502,25 +513,16 @@ class MEA(object):
             else:
                 if isinstance(c, (float, int, np.float, np.integer)):
                     vp = 0
-                    stim_points = []
-                    for ii in np.arange(self.number_electrodes):
-                        vs, sp = self.electrodes[ii].field_contribution(points, npoints=self.points_per_electrode,
-                                                                        model=self.model, main_axes=self.main_axes,
-                                                                        seed=seed)
-
-                        vp += vs
-                        if len(sp) != 0:
-                            stim_points.append(sp)
-                elif isinstance(c, (list, np.ndarray)):
+                else:  # isinstance(c, (list, np.ndarray)):
                     vp = np.zeros(len(c))
-                    stim_points = []
-                    for ii in np.arange(self.number_electrodes):
-                        vs, sp = self.electrodes[ii].field_contribution(points, npoints=self.points_per_electrode,
-                                                                        model=self.model, main_axes=self.main_axes,
-                                                                        seed=seed)
-                        vp += vs
-                        if len(sp) != 0:
-                            stim_points.append(sp)
+                stim_points = []
+                for ii in np.arange(self.number_electrodes):
+                    vs = self.electrodes[ii].field_contribution(points, npoints=self.points_per_electrode,
+                                                                model=self.model)
+                    sp = self.electrodes[ii].stim_points
+                    vp += vs
+                    if sp is not None:
+                        stim_points.append(sp)
         elif points.ndim == 2:
             if points.shape[1] != 3:
                 print("Error: expected 3d points")
@@ -528,38 +530,19 @@ class MEA(object):
             else:
                 if isinstance(c, (float, int, np.float, np.integer)):
                     vp = np.zeros(points.shape[0])
-                    for pp in np.arange(len(vp)):
-                        if verbose:
-                            print("Computing point: ", pp + 1)
-                        pf = 0
-                        stim_points = []
-                        cur_point = points[pp]
-                        for ii in np.arange(self.number_electrodes):
-                            vs, sp = self.electrodes[ii].field_contribution(cur_point,
-                                                                            npoints=self.points_per_electrode,
-                                                                            model=self.model, main_axes=self.main_axes)
-                            pf += vs
-                            if len(sp) != 0:
-                                stim_points.append(sp)
-                        vp[pp] = pf
-                elif isinstance(c, (list, np.ndarray)):
+                else:  # isinstance(c, (list, np.ndarray)):
                     vp = np.zeros((points.shape[0], len(c)))
-                    stim_points = []
-                    for pp in np.arange(len(vp)):
-                        if verbose:
-                            print("Computing point: ", pp + 1)
-                        pf = np.zeros(len(c))
-                        stim_points = []
-                        cur_point = points[pp]
-                        for ii in np.arange(self.number_electrodes):
-                            vs, sp = self.electrodes[ii].field_contribution(cur_point,
-                                                                            npoints=self.points_per_electrode,
-                                                                            model=self.model, main_axes=self.main_axes,
-                                                                            seed=seed)
-                            pf += vs
-                            if len(sp) != 0:
-                                stim_points.append(sp)
-                        vp[pp] = pf
+
+                stim_points = []
+                for ii in np.arange(self.number_electrodes):
+                    vs = self.electrodes[ii].field_contribution(points,
+                                                                npoints=self.points_per_electrode,
+                                                                model=self.model)
+                    vp += vs
+                    sp = self.electrodes[ii].stim_points
+                    if sp is not None:
+                        stim_points.append(sp)
+
         stim_points = np.array(stim_points)
         if len(stim_points.shape) == 3:
             stim_points = np.reshape(stim_points, (stim_points.shape[0] * stim_points.shape[1], stim_points.shape[2]))
@@ -654,6 +637,7 @@ class MEA(object):
         rot_pos += center_probe
         self._set_positions(rot_pos)
         self._set_normal(normal)
+        self._set_main_axes(self.main_axes)
 
     def move(self, vector):
         '''

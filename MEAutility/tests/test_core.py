@@ -9,15 +9,15 @@ import os
 def test_electrodes_field_contribution():
     elec_c = Electrode(position=[100,100,100], normal=[1,0,0], current=10, size=10, shape='circle',
                        main_axes=[[0,1,0],[0,0,1]])
-    v_1_c, _ = elec_c.field_contribution(pos=[150,100,100], npoints=1)
-    v_5_c, _ = elec_c.field_contribution(pos=[150, 100, 100], npoints=5)
-    v_10_c, _ = elec_c.field_contribution(pos=[150, 100, 100], npoints=10)
+    v_1_c = elec_c.field_contribution(points=[150,100,100], npoints=1)
+    v_5_c = elec_c.field_contribution(points=[150, 100, 100], npoints=5)
+    v_10_c = elec_c.field_contribution(points=[150, 100, 100], npoints=10)
 
     elec_s = Electrode(position=[100, 100, 100], normal=[1, 0, 0], current=10, size=10, shape='square',
                        main_axes=[[0, 1, 0], [0, 0, 1]])
-    v_1_s, _ = elec_s.field_contribution(pos=[150, 100, 100], npoints=1)
-    v_5_s, _ = elec_s.field_contribution(pos=[150, 100, 100], npoints=5)
-    v_10_s, _ = elec_s.field_contribution(pos=[150, 100, 100], npoints=10)
+    v_1_s = elec_s.field_contribution(points=[150, 100, 100], npoints=1)
+    v_5_s = elec_s.field_contribution(points=[150, 100, 100], npoints=5)
+    v_10_s = elec_s.field_contribution(points=[150, 100, 100], npoints=10)
 
     assert np.isclose([v_1_c], [v_10_c], rtol=0.1)
     assert np.isclose([v_1_c], [v_5_c], rtol=0.1)
@@ -64,13 +64,13 @@ def test_mea_compute_field():
 
     v = 100 / (2*np.pi*0.3 * dist)
     v_c = mea.compute_field(pos_c)
-    assert v == v_c
+    assert np.isclose(v, v_c)
 
     v_arr = np.array([v] * 100)
     mea.set_current(10, [100]*100)
     v_c_arr = mea.compute_field(pos_c)
 
-    assert np.isclose(v_arr,v_c_arr).all()
+    assert np.isclose(v_arr, v_c_arr).all()
 
 
 def test_mea_save_load():
