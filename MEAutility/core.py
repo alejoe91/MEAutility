@@ -553,9 +553,9 @@ class MEA(object):
                         if len(el.current) != len(current_value):
                             el.current = np.array([el.current[0]] * len(current_value))
 
-    def set_current_pulses(self, el_id, amp1, phase1, interpulse, t_stop, dt,
+    def set_current_pulses(self, el_id, amp1, width1, interpulse, t_stop, dt,
                            biphasic=False, interphase=None, n_pulses=None, n_bursts=None, interburst=None, amp2=None,
-                           phase2=None, t_start=None):
+                           width2=None, t_start=None):
         '''
         Computes and sets pulsed currents on specified electrode.
 
@@ -565,7 +565,7 @@ class MEA(object):
             Electrode index
         amp1: float
             Amplitude of stimulation. If 'biphasic', amplitude of the first phase.
-        phase1: float
+        width1: float
             Duration of the pulse in ms. If 'biphasic', duration of the first phase.
         interpulse: float
             Interpulse interval in ms
@@ -577,8 +577,8 @@ class MEA(object):
             If True, biphasic pulses are used
         amp2: float
             Amplitude of second phase stimulation (when 'biphasic'). If None, this amplitude is the opposite of 'amp1'
-        phase2: float
-            Duration of the pulse of the second phase in ms (when 'biphasic'). If None, it is the same as 'phase1'
+        width2: float
+            Duration of the pulse of the second phase in ms (when 'biphasic'). If None, it is the same as 'width1'
         interphase: float
             For biphasic stimulation, duration between two phases in ms
         n_pulses: int
@@ -600,8 +600,8 @@ class MEA(object):
         if biphasic:
             if amp2 is None:
                 amp2 = -amp1
-            if phase2 is None:
-                phase2 = phase1
+            if width2 is None:
+                width2 = width1
             if interphase is None:
                 interphase = 0
         if t_start is None:
@@ -621,15 +621,15 @@ class MEA(object):
         n_p = 0
         n_b = 0
         while t_pulse < t_stop and n_p < n_pulses and n_b < n_bursts:
-            pulse_idxs = np.where((t_ext > t_pulse) & (t_ext <= t_pulse + phase1))
+            pulse_idxs = np.where((t_ext > t_pulse) & (t_ext <= t_pulse + width1))
             current_values[pulse_idxs] = amp1
             if biphasic:
-                t_pulse2 = t_pulse + phase1 + interphase
-                pulse2_idxs = np.where((t_ext > t_pulse2) & (t_ext <= t_pulse2 + phase2))
+                t_pulse2 = t_pulse + width1 + interphase
+                pulse2_idxs = np.where((t_ext > t_pulse2) & (t_ext <= t_pulse2 + width2))
                 current_values[pulse2_idxs] = amp2
-                t_pulse_end = t_pulse2 + phase2
+                t_pulse_end = t_pulse2 + width2
             else:
-                t_pulse_end = t_pulse + phase1
+                t_pulse_end = t_pulse + width1
             n_p += 1
 
             if interburst:

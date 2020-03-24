@@ -14,7 +14,7 @@ setup(
     name="MEAutility",
     version=version,
     author="Alessio Buccino",
-    author_email="alessiob@ifi.uio.no",
+    author_email="alessiop.buccino@gmail.com",
     description="Python package for multi-electrode array (MEA) handling and stimulation.",
     long_description=long_description,
     long_description_content_type="text/markdown",

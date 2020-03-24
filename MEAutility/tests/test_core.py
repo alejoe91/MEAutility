@@ -133,25 +133,25 @@ def test_mea_set_current_pulse():
     amp1 = 1000
     t_stop = 100
     t_start = 5
-    phase1 = 2
+    width1 = 2
     interpulse = 2
     dt = 0.01
     n_pulses = 3
     interburst = 30
 
-    c, t = mea.set_current_pulses(el_id=0, amp1=amp1, phase1=phase1, interpulse=interpulse, t_stop=t_stop, dt=dt,
+    c, t = mea.set_current_pulses(el_id=0, amp1=amp1, width1=width1, interpulse=interpulse, t_stop=t_stop, dt=dt,
                                   biphasic=False)
     assert np.max(t) < t_stop
     assert np.max(c) == amp1 and np.min(c) == 0
     assert np.allclose(c, mea.electrodes[el_id].current)
 
-    c, t = mea.set_current_pulses(el_id=0, amp1=amp1, phase1=phase1, interpulse=interpulse, t_stop=t_stop, dt=dt,
+    c, t = mea.set_current_pulses(el_id=0, amp1=amp1, width1=width1, interpulse=interpulse, t_stop=t_stop, dt=dt,
                                   biphasic=True)
     assert np.max(t) < t_stop
     assert np.max(c) == amp1 and np.min(c) == -amp1
     assert np.allclose(c, mea.electrodes[el_id].current)
 
-    c, t = mea.set_current_pulses(el_id=0, amp1=amp1, phase1=phase1, interpulse=interpulse, t_stop=t_stop, dt=dt,
+    c, t = mea.set_current_pulses(el_id=0, amp1=amp1, width1=width1, interpulse=interpulse, t_stop=t_stop, dt=dt,
                                   biphasic=True, n_pulses=n_pulses, interburst=interburst, t_start=t_start)
     assert np.max(t) < t_stop and np.min(t) >= t_start
     assert np.max(c) == amp1 and np.min(c) == -amp1
