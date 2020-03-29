@@ -683,10 +683,10 @@ class MEA(object):
             Single point (3) or array of points (n_points, 3) to compute potential
         return_stim_points: bool
             If True, stimulating points are returned
+        points_per_electrode: int
+            Number of stimulation points per electrode
         seed: int
             Seed for random drawing of stimulation points
-        verbose: bool
-            If True, output is verbose
 
         Returns
         -------

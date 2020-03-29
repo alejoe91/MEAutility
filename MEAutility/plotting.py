@@ -520,9 +520,9 @@ def plot_v_surf(mea, v_plane=None, x_bound=None, y_bound=None, z_bound=None, off
     return ax, v_grid.T
 
 
-def plot_mea_recording(signals, mea, colors=None, lw=1, ax=None, spacing=None,
+def plot_mea_recording(signals, mea, colors=None, ax=None, spacing=None,
                        scalebar=False, time=None, vscale=None, hide_axis=True,
-                       axis_equal=False):
+                       axis_equal=False, lw=1, alpha=1, channels=None, **ax_kwargs):
     '''
     Plots mea signals at electrode locations.
 
@@ -587,27 +587,38 @@ def plot_mea_recording(signals, mea, colors=None, lw=1, ax=None, spacing=None,
         if len(signals.shape) > 2:
             colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
         else:
-            colors = 'k'
+            colors = ['k']
+
+    # if color is passed as tuple
+    if isinstance(colors, tuple):
+        colors = [colors]
+
+    if channels is None:
+        channels = np.arange(mea.number_electrodes)
 
     number_electrodes = mea.number_electrodes
     if len(signals.shape) == 3:  # multiple
         for sp_i, sp in enumerate(signals_norm):
             for el in range(number_electrodes):
-                if len(colors) > 1:
-                    ax.plot(np.linspace(-(mea_pitch[0] - spacing) / 2., (mea_pitch[0] - spacing) / 2., signals.shape[2])
-                            + mea_pos[el, 0], np.transpose(sp[el, :]) + mea_pos[el, 1], lw=lw,
-                            color=colors[int(np.mod(sp_i, len(colors)))],
-                            label='EAP ' + str(sp_i + 1))
-                else:
-                    ax.plot(np.linspace(-(mea_pitch[0] - spacing) / 2., (mea_pitch[0] - spacing) / 2., signals.shape[2])
-                            + mea_pos[el, 0], np.transpose(sp[el, :]) + mea_pos[el, 1], lw=lw, color=colors,
-                            label='EAP ' + str(sp_i + 1))
+                if el in channels:
+                    if len(colors) > 1:
+                        ax.plot(np.linspace(-(mea_pitch[0] - spacing) / 2., (mea_pitch[0] - spacing) / 2.,
+                                            signals.shape[2])
+                                + mea_pos[el, 0], np.transpose(sp[el, :]) + mea_pos[el, 1],
+                                color=colors[int(np.mod(sp_i, len(colors)))],
+                                label='EAP ' + str(sp_i + 1), lw=lw, alpha=alpha)
+                    else:
+                        ax.plot(np.linspace(-(mea_pitch[0] - spacing) / 2., (mea_pitch[0] - spacing) / 2.,
+                                            signals.shape[2])
+                                + mea_pos[el, 0], np.transpose(sp[el, :]) + mea_pos[el, 1], color=colors[0],
+                                label='EAP ' + str(sp_i + 1), lw=lw, alpha=alpha)
 
     else:
         for el in range(number_electrodes):
-            ax.plot(np.linspace(-(mea_pitch[0] - spacing) / 2., (mea_pitch[0] - spacing) / 2., signals.shape[1]) +
-                    mea_pos[el, 0], signals_norm[el, :] +
-                    mea_pos[el, 1], color=colors, lw=lw)
+            if el in channels:
+                ax.plot(np.linspace(-(mea_pitch[0] - spacing) / 2., (mea_pitch[0] - spacing) / 2., signals.shape[1]) +
+                        mea_pos[el, 0], signals_norm[el, :] +
+                        mea_pos[el, 1], color=colors, lw=lw, alpha=alpha)
 
     if hide_axis:
         ax.set_xticks([])
@@ -616,6 +627,7 @@ def plot_mea_recording(signals, mea, colors=None, lw=1, ax=None, spacing=None,
 
     ax.set_xlim(
         [np.min(mea_pos[:, 0]) - (mea_pitch[0] - spacing) / 2., np.max(mea_pos[:, 0]) + (mea_pitch[0] - spacing) / 2.])
+    ax.set(**ax_kwargs)
 
     if scalebar:
         if time is None:
@@ -632,9 +644,9 @@ def plot_mea_recording(signals, mea, colors=None, lw=1, ax=None, spacing=None,
 
             ax.plot([pos_h[0], pos_h[0]], [pos_h[1], pos_h[1] + length_h], color='k', lw=2)
             if vscale is None:
-                ax.text(pos_h[0] + shift, pos_h[1] + length_h / 2., str(int(signalmin // 10 * 10)) + ' $\mu$V')
+                ax.text(pos_h[0] + shift, pos_h[1] + length_h / 2., str(int(signalmin // 10 * 10)) + ' uV')
             else:
-                ax.text(pos_h[0] + shift, pos_h[1] + length_h / 2., str(int(vscale)) + ' $\mu$V')
+                ax.text(pos_h[0] + shift, pos_h[1] + length_h / 2., str(int(vscale)) + ' uV')
             ax.plot([pos_w[0], pos_w[0] + length_w], [pos_w[1], pos_w[1]], color='k', lw=2)
             ax.text(pos_w[0] + shift, pos_w[1] - length_h / 3., str(time / 5) + ' ms')
 
