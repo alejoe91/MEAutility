@@ -592,6 +592,8 @@ def plot_mea_recording(signals, mea, colors=None, ax=None, spacing=None,
     # if color is passed as tuple
     if isinstance(colors, tuple):
         colors = [colors]
+    if isinstance(colors, str):
+        colors = [colors]
 
     if channels is None:
         channels = np.arange(mea.number_electrodes)
@@ -618,7 +620,7 @@ def plot_mea_recording(signals, mea, colors=None, ax=None, spacing=None,
             if el in channels:
                 ax.plot(np.linspace(-(mea_pitch[0] - spacing) / 2., (mea_pitch[0] - spacing) / 2., signals.shape[1]) +
                         mea_pos[el, 0], signals_norm[el, :] +
-                        mea_pos[el, 1], color=colors, lw=lw, alpha=alpha)
+                        mea_pos[el, 1], color=colors[0], lw=lw, alpha=alpha)
 
     if hide_axis:
         ax.set_xticks([])
