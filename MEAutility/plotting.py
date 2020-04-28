@@ -566,7 +566,9 @@ def plot_mea_recording(signals, mea, colors=None, ax=None, spacing=None,
         no_tight = True
 
     mea_pos = np.array([np.dot(mea.positions, mea.main_axes[0]), np.dot(mea.positions, mea.main_axes[1])]).T
-    mea_pitch = [np.max(np.diff(np.sort(mea_pos[:, 0]))), np.max(np.diff(np.sort(mea_pos[:, 1])))]
+    diff_x = np.diff(mea_pos[:, 0])
+    diff_y = np.diff(mea_pos[:, 1])
+    mea_pitch = [np.min(diff_x[diff_x > 0]), np.min(diff_y[diff_y > 0])]
 
     if spacing is None:
         spacing = 0.1 * np.min(mea_pitch)
@@ -578,7 +580,7 @@ def plot_mea_recording(signals, mea, colors=None, ax=None, spacing=None,
 
     # normalize to min peak
     if vscale is None:
-        signalmin = 1.5 * np.max(np.abs(signals))
+        signalmin = 1.5 * np.nanmax(np.abs(signals))
         signals_norm = signals / signalmin * mea_pitch[1]
     else:
         signals_norm = signals / vscale * mea_pitch[1]
@@ -601,26 +603,28 @@ def plot_mea_recording(signals, mea, colors=None, ax=None, spacing=None,
     number_electrodes = mea.number_electrodes
     if len(signals.shape) == 3:  # multiple
         for sp_i, sp in enumerate(signals_norm):
-            for el in range(number_electrodes):
-                if el in channels:
-                    if len(colors) > 1:
-                        ax.plot(np.linspace(-(mea_pitch[0] - spacing) / 2., (mea_pitch[0] - spacing) / 2.,
-                                            signals.shape[2])
-                                + mea_pos[el, 0], np.transpose(sp[el, :]) + mea_pos[el, 1],
-                                color=colors[int(np.mod(sp_i, len(colors)))],
-                                label='EAP ' + str(sp_i + 1), lw=lw, alpha=alpha)
-                    else:
-                        ax.plot(np.linspace(-(mea_pitch[0] - spacing) / 2., (mea_pitch[0] - spacing) / 2.,
-                                            signals.shape[2])
-                                + mea_pos[el, 0], np.transpose(sp[el, :]) + mea_pos[el, 1], color=colors[0],
-                                label='EAP ' + str(sp_i + 1), lw=lw, alpha=alpha)
+            for el in channels:
+                if len(colors) > 1:
+                    ax.plot(np.linspace(-(mea_pitch[0] - spacing) / 2., (mea_pitch[0] - spacing) / 2.,
+                                        signals.shape[2])
+                            + mea_pos[el, 0], np.transpose(sp[el, :]) + mea_pos[el, 1],
+                            color=colors[int(np.mod(sp_i, len(colors)))],
+                            label='EAP ' + str(sp_i + 1), lw=lw, alpha=alpha)
+                else:
+                    ax.plot(np.linspace(-(mea_pitch[0] - spacing) / 2., (mea_pitch[0] - spacing) / 2.,
+                                        signals.shape[2])
+                            + mea_pos[el, 0], np.transpose(sp[el, :]) + mea_pos[el, 1], color=colors[0],
+                            label='EAP ' + str(sp_i + 1), lw=lw, alpha=alpha)
 
     else:
-        for el in range(number_electrodes):
-            if el in channels:
-                ax.plot(np.linspace(-(mea_pitch[0] - spacing) / 2., (mea_pitch[0] - spacing) / 2., signals.shape[1]) +
-                        mea_pos[el, 0], signals_norm[el, :] +
-                        mea_pos[el, 1], color=colors[0], lw=lw, alpha=alpha)
+        if len(colors) == len(channels):
+            color_list = colors
+        else:
+            color_list = [colors[0]] * number_electrodes
+        for i, el in enumerate(channels):
+            ax.plot(np.linspace(-(mea_pitch[0] - spacing) / 2., (mea_pitch[0] - spacing) / 2., signals.shape[1]) +
+                    mea_pos[el, 0], signals_norm[el, :] +
+                    mea_pos[el, 1], color=color_list[i], lw=lw, alpha=alpha)
 
     if hide_axis:
         ax.set_xticks([])
@@ -721,7 +725,7 @@ def play_mea_recording(signals, mea, fs, window=1, step=0.1, colors=None, lw=1, 
 
     # normalize to min peak
     if vscale is None:
-        signalmin = 1.5 * np.max(np.abs(signals))
+        signalmin = 1.5 * np.nanmax(np.abs(signals))
         signals_norm = signals / signalmin * mea_pitch[1]
     else:
         signals_norm = signals / vscale * mea_pitch[1]
