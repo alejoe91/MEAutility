@@ -566,9 +566,25 @@ def plot_mea_recording(signals, mea, colors=None, ax=None, spacing=None,
         no_tight = True
 
     mea_pos = np.array([np.dot(mea.positions, mea.main_axes[0]), np.dot(mea.positions, mea.main_axes[1])]).T
-    diff_x = np.diff(mea_pos[:, 0])
-    diff_y = np.diff(mea_pos[:, 1])
-    mea_pitch = [np.min(diff_x[diff_x > 0]), np.min(diff_y[diff_y > 0])]
+
+    if len(mea_pos) > 1:
+        diff_x = np.diff(mea_pos[:, 0])
+        diff_y = np.diff(mea_pos[:, 1])
+
+        x_pitch = 0
+        y_pitch = 0
+        if np.any(diff_x > 0):
+            x_pitch = np.min(diff_x[diff_x > 0])
+        if np.any(diff_y > 0):
+            y_pitch = np.min(diff_y[diff_y > 0])
+        if x_pitch == 0:
+            x_pitch = y_pitch
+        if y_pitch == 0:
+            y_pitch = x_pitch
+        mea_pitch = [x_pitch, y_pitch]
+    else:
+        # single channel
+        mea_pitch = [1, 1]
 
     if spacing is None:
         spacing = 0.1 * np.min(mea_pitch)
