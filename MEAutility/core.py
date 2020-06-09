@@ -372,12 +372,15 @@ class MEA(object):
         # Assumption (electrodes on the same plane)
         if self.number_electrodes > 1:
             if normal is None:
-                normal = np.cross(positions[0], positions[1])
-                if np.linalg.norm(normal) > 0:
-                    normal /= np.linalg.norm(normal)
-                    self.normal = np.array([normal] * self.number_electrodes)
+                if np.dot(positions[0], positions[1]) != np.linalg.norm(positions[0] * positions[1]):
+                    normal = np.cross(positions[0], positions[1])
+                    if np.linalg.norm(normal) > 0:
+                        normal /= np.linalg.norm(normal)
+                        self.normal = np.array([normal] * self.number_electrodes)
+                    else:
+                        self.normal = [None] * self.number_electrodes
                 else:
-                    self.normal = [None] * self.number_electrodes
+                    self.normal = [np.cross(self.main_axes[0], self.main_axes[1])] * self.number_electrodes
             else:
                 if len(normal) == self.number_electrodes and len(normal[0]) == 3:
                     self.normal = normal
