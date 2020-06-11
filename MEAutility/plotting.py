@@ -1,14 +1,7 @@
 from __future__ import print_function
 
 import numpy as np
-from MEAutility.core import MEA, RectMEA, rotation_matrix
-import matplotlib.pylab as plt
-
-import matplotlib.patches as patches
-from matplotlib.path import Path
-from mpl_toolkits.mplot3d import art3d
-from matplotlib import colors as mpl_colors
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+from MEAutility.core import rotation_matrix
 
 
 def plot_probe(mea, ax=None, xlim=None, ylim=None, color_currents=False, top=None, bottom=None,
@@ -47,6 +40,9 @@ def plot_probe(mea, ax=None, xlim=None, ylim=None, color_currents=False, top=Non
         The output axis
 
     '''
+    import matplotlib.pylab as plt
+    import matplotlib.patches as patches
+    from matplotlib.path import Path
 
     if ax is None:
         fig = plt.figure()
@@ -206,6 +202,7 @@ def plot_probe_3d(mea, ax=None, xlim=None, ylim=None, zlim=None, top=None, botto
         The output axis
 
     '''
+    import matplotlib.pylab as plt
     from matplotlib import colors as mpl_colors
     from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
@@ -355,6 +352,8 @@ def plot_v_image(mea, v_plane=None, x_bound=None, y_bound=None, z_bound=None, of
         The voltage image 
 
     '''
+    import matplotlib.pylab as plt
+
     if v_plane is None:
         v_grid = np.zeros((npoints, npoints))
         if plane == 'xy':
@@ -444,6 +443,8 @@ def plot_v_surf(mea, v_plane=None, x_bound=None, y_bound=None, z_bound=None, off
     v_grid: np.array
         The voltage image 
     '''
+    import matplotlib.pylab as plt
+
     if v_plane is None:
         v_grid = np.zeros((npoints, npoints))
         if plane == 'xy':
@@ -557,6 +558,8 @@ def plot_mea_recording(signals, mea, colors=None, ax=None, spacing=None,
         The output axis
 
     '''
+    import matplotlib.pylab as plt
+
     if ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1, frameon=False)
@@ -721,6 +724,7 @@ def play_mea_recording(signals, mea, fs, window=1, step=0.1, colors=None, lw=1, 
         The output animation
 
     '''
+    import matplotlib.pylab as plt
     import matplotlib.animation as animation
 
     n_window = int(fs * window)
@@ -823,6 +827,8 @@ def plot_cylinder_3d(bottom, direction, length, radius, color='k', alpha=.5, ax=
     ax: matplotlib axis
         The output axis
     '''
+    import matplotlib.pylab as plt
+
     if ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1, projection='3d')
@@ -861,6 +867,9 @@ def _make_3d_ellipse_patch(size, axis_1, axis_2, position, ax, facecolor='orange
     '''
     Helper function to make 3d ellipse patch.
     '''
+    import matplotlib.patches as patches
+    from mpl_toolkits.mplot3d import art3d
+
     p = patches.Circle((0, 0), size, facecolor=facecolor, alpha=alpha)
     ax.add_patch(p)
 
@@ -961,6 +970,9 @@ def _get_polygons_for_cylinder(pos_start, direction, length, radius, n_points, f
     '''
     Helper function to construct polygons from cylinders.
     '''
+    from matplotlib import colors as mpl_colors
+    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+
     x, y, z = _cylinder(pos_start,
                         direction,
                         length,
