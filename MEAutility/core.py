@@ -302,6 +302,32 @@ class Electrode:
 
         return points
 
+    def are_points_inside(self, points):
+        points = np.array(points)
+        if points.ndim == 1:
+            points = [points]
+
+        is_inside_array = np.zeros(len(points), dtype=bool)
+
+        for i, point in enumerate(points):
+            # check if in the same plane
+            is_inside = False
+            if not np.isclose(np.dot(self.normal, point - self.position), 0, atol=1):
+                is_inside = False
+            else:
+                if self.shape == 'square':
+                    if np.abs(np.dot(point - self.position, self.main_axes[0])) < self.size and \
+                            np.abs(np.dot(point - self.position, self.main_axes[1])) < self.size:
+                        is_inside = True
+                elif self.shape == 'rect':
+                    if np.abs(np.dot(point - self.position, self.main_axes[0])) < self.size[0] and \
+                            np.abs(np.dot(point - self.position, self.main_axes[1])) < self.size[1]:
+                        is_inside = True
+                elif self.shape == 'circle':
+                    if np.linalg.norm(point - self.position) < self.size:
+                        is_inside = True
+            is_inside_array[i] = is_inside
+        return np.squeeze(is_inside_array)
 
 
 class MEA(object):
@@ -469,6 +495,26 @@ class MEA(object):
             for i, el in enumerate(self.electrodes):
                 currents[i] = el.current
         return currents
+
+    def get_closest_electrode_idx(self, pos):
+        '''
+        Returns index of electrode closest to the specified 3D point.
+
+        Parameters
+        ----------
+        pos: list or np.array
+            Array of 3d position
+
+        Returns
+        -------
+        index: int
+            The index of the closest electrode
+        '''
+        dists = np.zeros(self.number_electrodes)
+        for i, el in enumerate(self.electrodes):
+            dists[i] = np.linalg.norm(pos - el.position)
+
+        return np.argmin(dists)
 
     def _get_electrode_positions(self):
         pos = np.zeros((self.number_electrodes, 3))
