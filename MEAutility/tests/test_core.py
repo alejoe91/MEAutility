@@ -70,6 +70,25 @@ def test_electrodes_field_contribution_anisotropic():
     assert np.isclose([v_10_r], [v_5_r], rtol=0.1)
 
 
+def test_are_points_inside():
+    elec_c = Electrode(position=[100, 100, 100], normal=[1, 0, 0], size=10, shape='circle',
+                       sigma=[0.3, 0.4, 0.5], main_axes=[[0, 1, 0], [0, 0, 1]])
+
+    points = [[100, 105, 95], [100, 105, 105], [100, 105, 85]]
+    print(elec_c.are_points_inside(points))
+    assert np.alltrue(elec_c.are_points_inside(points) == np.array([True, True, False]))
+
+    elec_s = Electrode(position=[100, 100, 100], normal=[1, 0, 0], size=10, shape='square',
+                       sigma=[0.3, 0.4, 0.5], main_axes=[[0, 1, 0], [0, 0, 1]])
+    points = [[100, 104, 96], [100, 104, 104], [100, 105, 85]]
+    assert np.alltrue(elec_s.are_points_inside(points) == np.array([True, True, False]))
+
+    elec_r = Electrode(position=[100, 100, 100], normal=[1, 0, 0], size=[10, 20], shape='rect',
+                       sigma=[0.3, 0.4, 0.5], main_axes=[[0, 1, 0], [0, 0, 1]])
+    points = [[100, 96, 114], [100, 104, 104], [100, 85, 105]]
+    assert np.alltrue(elec_r.are_points_inside(points) == np.array([True, True, False]))
+
+
 def test_return_mea():
     mea = mu.return_mea('Neuronexus-32')
     assert isinstance(mea, mu.core.MEA)
@@ -107,6 +126,15 @@ def test_mea_set_currents():
     mea.currents = np.zeros((32, 200))
     assert len(mea.currents[0]) == 200
     assert mea.currents.shape == (32, 200)
+
+
+def test_mea_get_closest_idx():
+    mea = mu.return_mea('Neuronexus-32')
+    position = mea.positions[0]
+
+    position = position + [1, 1, 1]
+
+    assert mea.get_closest_electrode_idx(position) == 0
 
 
 def test_mea_compute_field():
