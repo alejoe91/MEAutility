@@ -401,7 +401,7 @@ class MEA(object):
                 if np.dot(positions[0], positions[1]) != np.linalg.norm(positions[0] * positions[1]):
                     normal = np.cross(positions[0], positions[1])
                     if np.linalg.norm(normal) > 0:
-                        normal /= np.linalg.norm(normal)
+                        normal = normal / np.linalg.norm(normal)
                         self.normal = np.array([normal] * self.number_electrodes)
                     else:
                         self.normal = [None] * self.number_electrodes
