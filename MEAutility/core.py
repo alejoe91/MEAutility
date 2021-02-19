@@ -113,7 +113,7 @@ class Electrode:
         potential: float or np.array
             Potential computed at the indicated point (float) or points (np.array)
         '''
-        if not isinstance(self.sigma, (float, int, np.float, np.integer)):
+        if not isinstance(self.sigma, (float, int, np.integer)):
             assert len(np.array(self.sigma)) == 3,  "Extracellular potentials can be computed for isotropic " \
                                                     "(scalar sigma) or anisotropic (3-D sigma) medium"
 
@@ -130,7 +130,7 @@ class Electrode:
         if np.array(points).ndim == 1:
             points = np.array([points])
 
-        if isinstance(self.current, (float, int, np.float, np.integer)):
+        if isinstance(self.current, (float, int, np.integer)):
             if self.current != 0:
                 if recompute_mapping:
                     self.compute_mapping(points, npoints, model=model, seed=seed)
@@ -178,7 +178,7 @@ class Electrode:
         self.points = points
 
         mapping = np.zeros(len(points))
-        if not isinstance(self.sigma, (float, int, np.float, np.integer)):
+        if not isinstance(self.sigma, (float, int, np.integer)):
             assert len(np.array(self.sigma)) == 3, "Extracellular potentials can be computed for isotropic " \
                                                    "(scalar sigma) or anisotropic (3-D sigma) medium"
         if self.npoints == 1:
@@ -188,7 +188,7 @@ class Electrode:
             assert self.main_axes is not None, "For 'npoints' > 1 the electrode main_axes must be set"
             stim_points = self.get_n_points(npoints)
             split_current = 1. / self.npoints
-        if isinstance(self.sigma, (float, int, np.float, np.integer)):
+        if isinstance(self.sigma, (float, int, np.integer)):
             # Isotropic
             # for i_p, pos in enumerate(points):
             for i_e, el_pos in enumerate(stim_points):
@@ -247,7 +247,7 @@ class Electrode:
         Parameters
         ----------
         mapping: np.array
-            Mapping 
+            Mapping
         points: np.array
             3D points to compute mapping
         """
@@ -585,7 +585,7 @@ class MEA(object):
         current_value: float or array
             Current value for the specified electrode
         '''
-        if isinstance(current_value, (float, int, np.float, np.integer)):
+        if isinstance(current_value, (float, int, np.integer)):
             if self.currents.ndim == 1:
                 self.electrodes[el_id].current = current_value
             else:
@@ -596,7 +596,7 @@ class MEA(object):
                 if el_i == el_id:
                     el.current = current_value
                 else:
-                    if isinstance(el.current, (float, int, np.float, np.integer)):
+                    if isinstance(el.current, (float, int, np.integer)):
                         el.current = np.array([el.current] * len(current_value))
                     elif isinstance(el.current, (list, np.ndarray)):
                         if len(el.current) != len(current_value):
@@ -759,7 +759,7 @@ class MEA(object):
                 print("Error: expected 3d point")
                 return
             else:
-                if isinstance(c, (float, int, np.float, np.integer)):
+                if isinstance(c, (float, int, np.integer)):
                     vp = 0
                 else:  # isinstance(c, (list, np.ndarray)):
                     vp = np.zeros(len(c))
@@ -776,7 +776,7 @@ class MEA(object):
                 print("Error: expected 3d points")
                 return
             else:
-                if isinstance(c, (float, int, np.float, np.integer)):
+                if isinstance(c, (float, int, np.integer)):
                     vp = np.zeros(points.shape[0])
                 else:  # isinstance(c, (list, np.ndarray)):
                     vp = np.zeros((points.shape[0], len(c)))
@@ -1157,7 +1157,7 @@ def get_positions(elinfo, center=True):
 
             if isinstance(dim, (int, np.integer)):
                 dim = [dim, dim]
-            if isinstance(pitch, (int, np.integer)) or isinstance(pitch, (float, np.float)):
+            if isinstance(pitch, (int, np.integer)) or isinstance(pitch, float):
                 pitch = [pitch, pitch]
             if len(dim) == 2:
                 d1 = np.array([])
@@ -1168,7 +1168,7 @@ def get_positions(elinfo, center=True):
                     stagger = None
                 for d_i in np.arange(dim[1]):
                     if stagger is not None:
-                        if isinstance(stagger, (int, np.integer)) or isinstance(stagger, (float, np.float)):
+                        if isinstance(stagger, (int, np.integer)) or isinstance(stagger, float):
                             if np.mod(d_i, 2):
                                 d1new = np.arange(dim[0]) * pitch[0] + stagger
                             else:
@@ -1204,7 +1204,7 @@ def get_positions(elinfo, center=True):
                     stagger = None
                 for d_i, d in enumerate(dim):
                     if stagger is not None:
-                        if isinstance(stagger, (int, np.integer)) or isinstance(stagger, (float, np.float)):
+                        if isinstance(stagger, (int, np.integer)) or isinstance(stagger, float):
                             if np.mod(d_i, 2):
                                 d1new = np.arange(d) * pitch[0] + stagger
                             else:
