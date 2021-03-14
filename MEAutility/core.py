@@ -391,7 +391,7 @@ class MEA(object):
         if 'pitch' in info.keys():
             self.pitch = info['pitch']
         else:
-            self.pitch = pitch
+            self.pitch = None
 
         if self.plane == 'xy':
             self.main_axes = np.array([[1, 0, 0], [0, 1, 0]])
