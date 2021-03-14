@@ -577,10 +577,8 @@ def plot_mea_recording(signals, mea, colors=None, ax=None, spacing=None,
         x_pitch = 0
         y_pitch = 0
         if np.any(diff_x > 0):
-            x_pitch = np.median(np.diff(np.unique(mea_pos[:, 0])))
             x_pitch = np.min(diff_x[diff_x > 0])
         if np.any(diff_y > 0):
-            x_pitch = np.median(np.diff(np.unique(mea_pos[:, 1])))
             y_pitch = np.min(diff_y[diff_y > 0])
         if x_pitch == 0:
             x_pitch = y_pitch
