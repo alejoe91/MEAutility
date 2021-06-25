@@ -388,6 +388,11 @@ class MEA(object):
         else:
             self.model = 'semi'
 
+        if 'pitch' in info.keys():
+            self.pitch = info['pitch']
+        else:
+            self.pitch = None
+
         if self.plane == 'xy':
             self.main_axes = np.array([[1, 0, 0], [0, 1, 0]])
         elif self.plane == 'yz':
