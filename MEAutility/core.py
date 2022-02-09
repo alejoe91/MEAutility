@@ -18,9 +18,9 @@ import copy
 import yaml
 import shutil
 from pathlib import Path
-from distutils.version import StrictVersion
+from packaging.version import Version
 
-if StrictVersion(yaml.__version__) >= StrictVersion('5.0.0'):
+if Version(yaml.__version__) >= Version('5.0.0'):
     use_loader = True
 else:
     use_loader = False
