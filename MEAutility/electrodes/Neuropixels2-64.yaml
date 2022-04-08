@@ -1,0 +1,9 @@
+electrode_name: Neuropixels2-64
+description: "Neuropixels 2,0 probe. 384 square contacts in 2 columns."
+sortlist: null
+pitch: [15.0, 32.0]
+dim: [32, 2]
+size: 6.0
+plane: yz
+shape: square
+type: mea
