@@ -1,0 +1,42 @@
+[project]
+name = "MEAutility"
+version = "1.5.2"
+authors = [
+  { name="Alessio Buccino", email="alessiop.buccino@gmail.com" },
+]
+
+description = "PPython package for multi-electrode array (MEA) handling and stimulation."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "numpy",
+    "pyyaml",
+    "matplotlib",
+]
+
+[project.urls]
+homepage = "https://github.com/alejoe91/MEAutility"
+repository = "https://github.com/alejoe91/MEAutility"
+documentation = "https://meautility.readthedocs.io/en/latest/ "
+
+
+[build-system]
+requires = ["setuptools>=62.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = true
+package-data = {"MEAutility.electrodes" = ["**/*.yaml"]}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["MEAutility*"]
+
+[tool.black]
+line-length = 120
