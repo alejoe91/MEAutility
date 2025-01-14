@@ -14,13 +14,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: s-weigand/setup-conda@v1
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.6
+          python-version: "3.11"
       - name: Which python
         run: |
-          conda --version
           which python
       - name: Install dependencies
         run: |
@@ -30,10 +30,11 @@ jobs:
       - name: Test with pytest and build coverage report
         run: |
           pytest
-      - name: Publish on PyPI
+      - name: Package and Upload
         env:
-          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+          STACKMANAGER_VERSION: ${{ github.event.release.tag_name }}
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: |
-          python setup.py sdist bdist_wheel
+          python -m build --sdist --wheel
           twine upload dist/*

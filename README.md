@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/alejoe91/MEAutility.svg?branch=master)](https://travis-ci.org/alejoe91/MEAutility) [![PyPI version](https://badge.fury.io/py/MEAutility.svg)](https://badge.fury.io/py/MEAutility)
+[![Build Status](https://travis-ci.org/alejoe91/MEAutility.svg?branch=main)](https://travis-ci.org/alejoe91/MEAutility) [![PyPI version](https://badge.fury.io/py/MEAutility.svg)](https://badge.fury.io/py/MEAutility)
 
 # MEAutility
 
@@ -13,17 +13,12 @@ If you want to install from sources and be updated with the latest development y
 ```
 git clone https://github.com/alejoe91/MEAutility
 cd MEAutility
-python setup.py install (or develop)
+pip install -e .
 ```
 
 The package can then imported in Python with:
 
 `import MEAutility as MEA`
-
-### Requirements
-- numpy
-- pyyaml
-- matplotlib
 
 ## Documentation
 
@@ -31,4 +26,4 @@ Please refer to https://meautility.readthedocs.io/en/latest/
 
 ## Contact
 
-For any questions or comments, please contact Alessio Buccino: alessiob@ifi.uio.no
+For any questions or comments, please contact Alessio Buccino: alessiop.buccino@gmail.com
