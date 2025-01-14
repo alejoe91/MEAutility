@@ -34,8 +34,6 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 packages = ["MEAutility"]
 package-dir = {"MEAutility" = "src/MEAutility"}
-
-[tool.setuptools]
 include-package-data = true
 
 [tool.black]
