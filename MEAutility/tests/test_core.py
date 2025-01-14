@@ -1,4 +1,3 @@
-import pytest
 import numpy as np
 from MEAutility.core import Electrode
 import MEAutility as mu
@@ -76,17 +75,17 @@ def test_are_points_inside():
 
     points = [[100, 105, 95], [100, 105, 105], [100, 105, 85]]
     print(elec_c.are_points_inside(points))
-    assert np.alltrue(elec_c.are_points_inside(points) == np.array([True, True, False]))
+    assert np.all(elec_c.are_points_inside(points) == np.array([True, True, False]))
 
     elec_s = Electrode(position=[100, 100, 100], normal=[1, 0, 0], size=10, shape='square',
                        sigma=[0.3, 0.4, 0.5], main_axes=[[0, 1, 0], [0, 0, 1]])
     points = [[100, 104, 96], [100, 104, 104], [100, 105, 85]]
-    assert np.alltrue(elec_s.are_points_inside(points) == np.array([True, True, False]))
+    assert np.all(elec_s.are_points_inside(points) == np.array([True, True, False]))
 
     elec_r = Electrode(position=[100, 100, 100], normal=[1, 0, 0], size=[10, 20], shape='rect',
                        sigma=[0.3, 0.4, 0.5], main_axes=[[0, 1, 0], [0, 0, 1]])
     points = [[100, 96, 114], [100, 104, 104], [100, 85, 105]]
-    assert np.alltrue(elec_r.are_points_inside(points) == np.array([True, True, False]))
+    assert np.all(elec_r.are_points_inside(points) == np.array([True, True, False]))
 
 
 def test_return_mea():
