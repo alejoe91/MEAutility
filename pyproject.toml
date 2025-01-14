@@ -5,7 +5,7 @@ authors = [
   { name="Alessio Buccino", email="alessiop.buccino@gmail.com" },
 ]
 
-description = "PPython package for multi-electrode array (MEA) handling and stimulation."
+description = "Python package for multi-electrode array (MEA) handling and stimulation."
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
