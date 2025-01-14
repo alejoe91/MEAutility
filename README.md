@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/alejoe91/MEAutility.svg?branch=main)](https://travis-ci.org/alejoe91/MEAutility) [![PyPI version](https://badge.fury.io/py/MEAutility.svg)](https://badge.fury.io/py/MEAutility)
+[![Build Status](https://github.com/alejoe91/MEAutility/actions/workflows/python-package.yml/badge.svg)](https://github.com/alejoe91/MEAutility/actions/workflows/python-package.yml/badge.svg) [![PyPI version](https://badge.fury.io/py/MEAutility.svg)](https://badge.fury.io/py/MEAutility)
 
 # MEAutility
 
