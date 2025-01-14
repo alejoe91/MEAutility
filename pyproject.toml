@@ -35,6 +35,7 @@ build-backend = "setuptools.build_meta"
 packages = ["MEAutility"]
 package-dir = {"MEAutility" = "src/MEAutility"}
 include-package-data = true
+package-data = {"MEAutility.electrodes" = ["**/*.yaml"]}
 
 [tool.black]
 line-length = 120
