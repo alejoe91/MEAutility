@@ -30,12 +30,13 @@ documentation = "https://meautility.readthedocs.io/en/latest/ "
 requires = ["setuptools>=62.0"]
 build-backend = "setuptools.build_meta"
 
-
 [tool.setuptools]
-packages = ["MEAutility"]
-package-dir = {"MEAutility" = "src/MEAutility"}
 include-package-data = true
 package-data = {"MEAutility.electrodes" = ["**/*.yaml"]}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["MEAutility*"]
 
 [tool.black]
 line-length = 120
