@@ -88,6 +88,45 @@ def test_are_points_inside():
     assert np.all(elec_r.are_points_inside(points) == np.array([True, True, False]))
 
 
+def test_electrode_spatial_extensions():
+    """
+    Test that electrodes have spatial extensions in 2D
+    """
+
+    positions = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
+
+    # Surface normal of electrode
+    N = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    probe_info = {'pos': positions,
+                  'description': 'custom',
+
+                  }
+    shapes = ['circle', 'square', 'rect']
+    sizes = [100, 100, [100, 100]]
+
+    # semi-arbitrary number substantially lower than
+    # expected spatial extent of electrodes:
+    min_expected_extent = 50
+
+    for s_idx, shape in enumerate(shapes):
+        probe_info.update({'shape': shape,
+                           'size': sizes[s_idx], })
+        probe = mu.MEA(positions=positions, info=probe_info,
+                       normal=N, sigma=0.3)
+
+        # Get random points on electrode surface:
+        points = probe.get_random_points_inside(100)
+
+        # Get spatial max extent along xyz-axes:
+        elec_span_xyz = np.max(points, axis=1) - np.min(points, axis=1)
+
+        # Point on electrode surface should be extended in 2D
+        elec_has_extent_xyz = elec_span_xyz > min_expected_extent
+        elec_surface_is_2D = np.sum(elec_has_extent_xyz, axis=-1) == 2
+
+        assert np.all(elec_surface_is_2D), f"Shape '{shape}' is not 2D"
+
+
 def test_return_mea():
     mea = mu.return_mea('Neuronexus-32')
     assert isinstance(mea, mu.core.MEA)
