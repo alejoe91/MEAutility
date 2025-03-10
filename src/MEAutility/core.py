@@ -292,6 +292,12 @@ class Electrode:
                 while not placed:
                     arr = (2 * self.size) * np.random.rand(3) - self.size
                     M = np.array([self.main_axes[0], self.main_axes[1], self.normal])
+                    # arbitrary_vector = np.array([1, 0, 0]) if abs(self.normal[0]) < 0.9 else np.array([0, 1, 0])
+                    # u = np.cross(self.normal, arbitrary_vector)
+                    # u = u / np.linalg.norm(u)  # Normalize u
+                    # v = np.cross(self.normal, u)
+                    # M = np.array([u, v, self.normal])
+
                     arr_rot = np.dot(M.T, arr)
                     point = np.cross(arr_rot, self.normal)
                     if np.linalg.norm(point) < self.size:
