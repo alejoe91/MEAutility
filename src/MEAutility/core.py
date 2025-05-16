@@ -267,8 +267,12 @@ class Electrode:
             if self.shape == 'square':
                 while not placed:
                     arr = (2 * self.size) * np.random.rand(3) - self.size
-                    # rotate to align to main_axes and keep uniform distribution
-                    M = np.array([self.main_axes[0], self.main_axes[1], self.normal])
+                    # rotate to align and keep uniform distribution
+                    arbitrary_vector = np.array([1, 0, 0]) if abs(self.normal[0]) < 0.9 else np.array([0, 1, 0])
+                    u = np.cross(self.normal, arbitrary_vector)
+                    u = u / np.linalg.norm(u)  # Normalize u
+                    v = np.cross(self.normal, u)
+                    M = np.array([u, v, self.normal])
                     arr_rot = np.dot(M.T, arr)
                     point = np.cross(arr_rot, self.normal)  # + self.position
                     if np.abs(np.dot(point, self.main_axes[0])) < self.size and \
@@ -280,8 +284,12 @@ class Electrode:
                     "If shape is 'rect', 'size' should have len equal 2'"
                 while not placed:
                     arr = (2 * np.max(self.size)) * np.random.rand(3) - np.max(self.size)
-                    # rotate to align to main_axes and keep uniform distribution
-                    M = np.array([self.main_axes[0], self.main_axes[1], self.normal])
+                    # rotate to align and keep uniform distribution
+                    arbitrary_vector = np.array([1, 0, 0]) if abs(self.normal[0]) < 0.9 else np.array([0, 1, 0])
+                    u = np.cross(self.normal, arbitrary_vector)
+                    u = u / np.linalg.norm(u)  # Normalize u
+                    v = np.cross(self.normal, u)
+                    M = np.array([u, v, self.normal])
                     arr_rot = np.dot(M.T, arr)
                     point = np.cross(arr_rot, self.normal)  # + self.position
                     if np.abs(np.dot(point, self.main_axes[0])) < self.size[0] and \
@@ -291,7 +299,12 @@ class Electrode:
             elif self.shape == 'circle':
                 while not placed:
                     arr = (2 * self.size) * np.random.rand(3) - self.size
-                    M = np.array([self.main_axes[0], self.main_axes[1], self.normal])
+                    arbitrary_vector = np.array([1, 0, 0]) if abs(self.normal[0]) < 0.9 else np.array([0, 1, 0])
+                    u = np.cross(self.normal, arbitrary_vector)
+                    u = u / np.linalg.norm(u)  # Normalize u
+                    v = np.cross(self.normal, u)
+                    M = np.array([u, v, self.normal])
+
                     arr_rot = np.dot(M.T, arr)
                     point = np.cross(arr_rot, self.normal)
                     if np.linalg.norm(point) < self.size:
